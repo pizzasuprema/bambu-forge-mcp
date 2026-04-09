@@ -49,3 +49,12 @@ def register_prepare_tools(mcp, get_config):
         from bambu_forge.prepare.optimizer import optimize_settings as _optimize
 
         return _optimize(file_path, priority=priorities, printer_model=cfg.printer_model)
+
+    @mcp.tool()
+    async def estimate_cost(
+        file_path: str, profile_name: str | None = None
+    ) -> dict[str, Any]:
+        """Estimate print cost (filament, power, time) from a 3D model or sliced output."""
+        from bambu_forge.prepare.cost_estimator import estimate_cost as _estimate
+
+        return _estimate(mesh_path=file_path)
