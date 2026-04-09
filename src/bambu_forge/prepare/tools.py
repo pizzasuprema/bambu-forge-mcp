@@ -41,3 +41,11 @@ def register_prepare_tools(mcp, get_config):
         from bambu_forge.prepare.analyzer import analyze_printability as _analyze
 
         return _analyze(file_path, printer_model=cfg.printer_model)
+
+    @mcp.tool()
+    async def optimize_settings(file_path: str, priorities: str) -> dict[str, Any]:
+        """Optimize print settings for a 3D model based on priority (speed, quality, strength, material_efficiency, silent)."""
+        cfg = get_config()
+        from bambu_forge.prepare.optimizer import optimize_settings as _optimize
+
+        return _optimize(file_path, priority=priorities, printer_model=cfg.printer_model)
