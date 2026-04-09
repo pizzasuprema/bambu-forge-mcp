@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from typing import Any
 
 from bambu_forge.printer.mqtt_client import BambuMqttClient
@@ -8,6 +9,15 @@ from bambu_forge.printer.status import parse_status
 from bambu_forge.printer import commands
 from bambu_forge.safety import validate_gcode, validate_temperature
 from bambu_forge.printer_registry import PrinterRegistry
+
+
+def _history_db_path(cfg) -> str | None:
+    if hasattr(cfg, "data_dir") and cfg.data_dir:
+        p = Path(cfg.data_dir) / "history.db"
+    else:
+        p = Path.home() / ".bambu-forge" / "history.db"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    return str(p)
 
 
 def _get_printer_model(printer_model: str | None, registry: PrinterRegistry | None = None):
@@ -331,11 +341,13 @@ def register_printer_tools(mcp, get_config, get_registry, get_mqtt_client=None, 
     async def start_print(file_path: str, plate_index: int = 0) -> dict[str, Any]:
         """Start a print job. In mock mode returns success. Real mode uploads via FTPS then sends print command."""
         cfg = get_config()
+        history_db = _history_db_path(cfg)
         return await start_print_impl(
             file_path=file_path,
             plate_index=plate_index,
             mock=cfg.mock_mode,
             mqtt_client=_client(cfg),
+            history_db_path=history_db,
         )
 
     @mcp.tool()

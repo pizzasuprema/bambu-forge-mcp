@@ -188,6 +188,9 @@ def _default_history_db_path(get_config) -> Path:
     return data_dir / "history.db"
 
 
+_VALID_OUTCOMES = {"success", "failure", "cancelled", "in_progress"}
+
+
 async def log_print_outcome_impl(
     design_name: str,
     outcome: str,
@@ -202,6 +205,13 @@ async def log_print_outcome_impl(
     settings: dict[str, Any] | None = None,
     db_path: str | Path | None = None,
 ) -> dict[str, Any]:
+    if outcome not in _VALID_OUTCOMES:
+        return {
+            "status": "error",
+            "error_code": "INVALID_OUTCOME",
+            "message": f"outcome must be one of {sorted(_VALID_OUTCOMES)}, got: {outcome!r}",
+        }
+
     from bambu_forge.profiles.history import PrintHistoryStore
 
     store = PrintHistoryStore(db_path=db_path or "history.db")
@@ -322,6 +332,7 @@ def register_profile_tools(mcp, get_config):
             priorities=priorities,
             db_path=db,
             printer_model=printer_model,
+            history_db_path=str(_default_history_db_path(get_config)),
         )
 
     @mcp.tool()
@@ -339,6 +350,11 @@ def register_profile_tools(mcp, get_config):
     async def log_print_outcome(
         design_name: str,
         outcome: str,
+        profile_name: str = "",
+        printer_model: str = "",
+        filament_type: str = "",
+        filament_grams: float = 0.0,
+        print_time_minutes: int = 0,
         quality_grade: str | None = None,
         failure_mode: str | None = None,
         notes: str | None = None,
@@ -348,6 +364,11 @@ def register_profile_tools(mcp, get_config):
         return await log_print_outcome_impl(
             design_name=design_name,
             outcome=outcome,
+            profile_name=profile_name,
+            printer_model=printer_model,
+            filament_type=filament_type,
+            filament_grams=filament_grams,
+            print_time_minutes=print_time_minutes,
             quality_grade=quality_grade,
             failure_mode=failure_mode,
             notes=notes,
