@@ -86,7 +86,7 @@ async def ping() -> dict:
 register_printer_tools(mcp, get_config, get_registry, get_mqtt_client)
 register_profile_tools(mcp, get_config)
 register_model_tools(mcp, get_config)
-register_prepare_tools(mcp, get_config)
+register_prepare_tools(mcp, get_config, get_registry)
 
 
 @mcp.tool()

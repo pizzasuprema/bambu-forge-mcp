@@ -214,6 +214,9 @@ def register_profile_tools(mcp, get_config):
         printer_model: str | None = None,
     ) -> dict[str, Any]:
         """Recommend a saved process profile or geometry-optimized settings for a mesh file."""
+        cfg = get_config()
+        if printer_model is None:
+            printer_model = cfg.printer_model
         db = _default_db_path(get_config)
         return await recommend_profile_impl(
             file_path=file_path,

@@ -7,7 +7,7 @@ from typing import Any
 from bambu_forge.prepare.slicer import run_slicer
 
 
-def register_prepare_tools(mcp, get_config):
+def register_prepare_tools(mcp, get_config, get_registry=None):
     @mcp.tool()
     async def slice_model(
         input_file: str,
@@ -84,4 +84,11 @@ def register_prepare_tools(mcp, get_config):
         if not isinstance(paths, list):
             paths = [paths]
 
-        return _arrange(paths, strategy=strategy)
+        build_volume = (256, 256, 256)
+        cfg = get_config()
+        if get_registry is not None and cfg.printer_model:
+            printer = get_registry().get(cfg.printer_model)
+            if printer is not None:
+                build_volume = tuple(printer.build_volume)
+
+        return _arrange(paths, strategy=strategy, build_volume=build_volume)
