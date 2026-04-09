@@ -1,18 +1,18 @@
 {
   "model_id_map": {
-    "O1C2": "H2C",
+    "BL-P001": "X1C",
+    "BL-P002": "X1",
     "C11": "P1P",
     "C12": "P1S",
-    "N1": "X1",
-    "N2S": "X1C",
-    "N3S": "X1E",
-    "N4S": "A1M",
-    "N5S": "A1",
-    "O1D1": "H2D",
-    "O1D2": "H2D_Pro",
-    "O1D3": "H2D_Laser",
-    "O1S1": "H2S",
-    "P2S1": "P2S"
+    "C13": "X1E",
+    "N1": "A1M",
+    "N2S": "A1",
+    "N7": "P2S",
+    "O1C": "H2C",
+    "O1C2": "H2C",
+    "O1D": "H2D",
+    "O1E": "H2D_Pro",
+    "O1S": "H2S"
   },
   "printers": {
     "P1P": {
@@ -143,17 +143,6 @@
       "chamber_temp_max": 65,
       "enclosed": true,
       "modes": ["fdm"],
-      "ams_type": "AMS_HT",
-      "build_volume": [320, 320, 320],
-      "dual_nozzle": true
-    },
-    "H2D_Laser": {
-      "display_name": "Bambu Lab H2D Laser",
-      "nozzle_temp_max": 350,
-      "bed_temp_max": 120,
-      "chamber_temp_max": 65,
-      "enclosed": true,
-      "modes": ["fdm", "laser"],
       "ams_type": "AMS_HT",
       "build_volume": [320, 320, 320],
       "dual_nozzle": true
