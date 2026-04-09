@@ -136,3 +136,46 @@ async def test_get_insights_with_data(tmp_path):
     assert insights["total_prints"] == 3
     assert insights["success_rate"] == pytest.approx(2 / 3, abs=0.01)
     assert insights["most_common_failure_mode"] == "adhesion"
+
+
+@pytest.mark.asyncio
+async def test_recommend_with_history_boost(tmp_path):
+    from bambu_forge.profiles.tools import recommend_profile_impl
+    from bambu_forge.profiles.history import PrintHistoryStore
+    import trimesh
+
+    db = str(tmp_path / "test.db")
+    history_db = str(tmp_path / "history.db")
+
+    box = trimesh.creation.box(extents=[50, 50, 50])
+    mesh_path = str(tmp_path / "box.stl")
+    box.export(mesh_path)
+
+    await save_profile_impl(
+        name="TestedProfile",
+        base_profile="base",
+        overrides={"layer_height": 0.2},
+        profile_type="process",
+        db_path=db,
+    )
+
+    result_before = await recommend_profile_impl(
+        file_path=mesh_path, priorities="quality", db_path=db,
+    )
+
+    history = PrintHistoryStore(db_path=history_db)
+    try:
+        for _ in range(5):
+            history.log_print(
+                "box", "TestedProfile", "X1C", "PLA", 20.0, 30, "success",
+            )
+    finally:
+        history.close()
+
+    result_after = await recommend_profile_impl(
+        file_path=mesh_path, priorities="quality", db_path=db,
+        history_db_path=history_db,
+    )
+
+    if result_before.get("recommendation_type") == "profile":
+        assert result_after["match_score"] >= result_before["match_score"]

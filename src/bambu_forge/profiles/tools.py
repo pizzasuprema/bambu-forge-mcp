@@ -97,6 +97,7 @@ async def recommend_profile_impl(
     priorities: str = "quality",
     db_path: str | Path | None = None,
     printer_model: str | None = None,
+    history_db_path: str | Path | None = None,
 ) -> dict[str, Any]:
     from bambu_forge.prepare.optimizer import optimize_settings
 
@@ -105,6 +106,19 @@ async def recommend_profile_impl(
         return optimized
 
     ideal = optimized["settings"]
+
+    history_rates: dict[str, float] = {}
+    if history_db_path:
+        from bambu_forge.profiles.history import PrintHistoryStore
+
+        h = PrintHistoryStore(db_path=history_db_path)
+        try:
+            for name in _get_profile_names_with_history(h):
+                rate_info = h.get_profile_success_rate(name)
+                if rate_info["total_prints"] > 0:
+                    history_rates[name] = rate_info["success_rate"]
+        finally:
+            h.close()
 
     store = ProfileStore(db_path=db_path or "profiles.db")
     try:
@@ -119,13 +133,17 @@ async def recommend_profile_impl(
             }
 
         best_match = None
-        best_score = -1
+        best_score = -1.0
         max_possible = len(ideal)
         for p in profiles:
             overrides = p.get("overrides")
             if not overrides:
                 continue
-            score = sum(1 for k, v in ideal.items() if overrides.get(k) == v)
+            raw_score = sum(1 for k, v in ideal.items() if overrides.get(k) == v)
+            score = float(raw_score)
+            sr = history_rates.get(p["name"])
+            if sr is not None:
+                score *= (1.0 + sr * 0.5)
             if score > best_score:
                 best_score = score
                 best_match = p
@@ -141,7 +159,7 @@ async def recommend_profile_impl(
                 "settings": ideal,
                 "message": (
                     f"Recommended profile: {best_match['name']} "
-                    f"({best_score}/{max_possible} matching settings)"
+                    f"(score {normalized_score})"
                 ),
             }
 
@@ -154,6 +172,13 @@ async def recommend_profile_impl(
         }
     finally:
         store.close()
+
+
+def _get_profile_names_with_history(history_store) -> list[str]:
+    rows = history_store._conn.execute(
+        "SELECT DISTINCT profile_name FROM print_history WHERE profile_name != ''"
+    ).fetchall()
+    return [r["profile_name"] for r in rows]
 
 
 def _default_history_db_path(get_config) -> Path:

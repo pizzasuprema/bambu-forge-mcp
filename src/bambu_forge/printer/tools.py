@@ -65,8 +65,10 @@ async def start_print_impl(
     plate_index: int = 0,
     mock: bool = False,
     mqtt_client: BambuMqttClient | None = None,
+    history_db_path: str | None = None,
 ) -> dict[str, Any]:
     if mock:
+        _log_print_start(file_path, history_db_path)
         return {
             "status": "success",
             "message": f"Print started: {file_path} (plate {plate_index})",
@@ -77,7 +79,33 @@ async def start_print_impl(
 
     payload = commands.build_print_project(file_path, plate_index)
     mqtt_client.publish_command(json.dumps(payload))
+    _log_print_start(file_path, history_db_path)
     return {"status": "success", "message": f"Print started: {file_path} (plate {plate_index})"}
+
+
+def _log_print_start(file_path: str, history_db_path: str | None = None):
+    if history_db_path is None:
+        return
+    try:
+        from bambu_forge.profiles.history import PrintHistoryStore
+        from pathlib import Path
+
+        store = PrintHistoryStore(db_path=history_db_path)
+        try:
+            design_name = Path(file_path).stem
+            store.log_print(
+                design_name=design_name,
+                profile_name="",
+                printer_model="",
+                filament_type="",
+                filament_grams=0.0,
+                print_time_minutes=0,
+                outcome="in_progress",
+            )
+        finally:
+            store.close()
+    except Exception:
+        pass
 
 
 async def control_print_impl(
