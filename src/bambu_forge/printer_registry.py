@@ -138,13 +138,18 @@ class PrinterRegistry:
             printers_dir = studio / "printers"
             if printers_dir.is_dir():
                 for json_path in sorted(printers_dir.glob("*.json")):
-                    base = self._models.get(
-                        _canonical_from_studio_path(json_path, self._model_id_map)
-                    )
-                    parsed = _parse_bambu_studio_printer(
-                        json_path, self._model_id_map, base=base
-                    )
-                    self._models[parsed.model_id] = parsed
+                    if json_path.name in ("filaments_blacklist.json", "version.txt"):
+                        continue
+                    try:
+                        base = self._models.get(
+                            _canonical_from_studio_path(json_path, self._model_id_map)
+                        )
+                        parsed = _parse_bambu_studio_printer(
+                            json_path, self._model_id_map, base=base
+                        )
+                        self._models[parsed.model_id] = parsed
+                    except (ValueError, KeyError, json.JSONDecodeError, IndexError):
+                        continue
 
     def get(self, model_id: str) -> PrinterModel | None:
         return self._models.get(model_id)
