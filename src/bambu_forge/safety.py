@@ -41,6 +41,11 @@ def validate_temperature(
     t = str(target).lower()
     temp = float(temp_c)
 
+    if temp < 0:
+        return TempValidationResult(
+            safe=False, reason="Negative temperature"
+        )
+
     if t == "nozzle":
         if temp > printer.nozzle_temp_max:
             return TempValidationResult(

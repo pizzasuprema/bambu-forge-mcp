@@ -85,6 +85,14 @@ def test_temp_validation_chamber_on_open_printer(a1_open_model):
     assert "no chamber" in result.reason.lower()
 
 
+def test_temp_validation_rejects_negative(h2c_model):
+    from bambu_forge.safety import validate_temperature
+
+    result = validate_temperature("nozzle", -50, h2c_model)
+    assert result.safe is False
+    assert "negative" in result.reason.lower() or result.reason != ""
+
+
 def test_gcode_blocklist_matches_after_strip_and_case_normalize(h2c_model):
     from bambu_forge.safety import validate_gcode
 

@@ -73,7 +73,7 @@ def resolve_inheritance(
 
     result = dict(resolved_parent)
     for key, value in profile.items():
-        if key not in _META_KEYS:
+        if key not in _META_KEYS and not key.startswith("_"):
             result[key] = value
 
     return result
