@@ -222,14 +222,65 @@ async def manage_printer_impl(
 
 async def calibrate_impl(
     calibration_type: str,
+    mock: bool = False,
+    printer_model: str | None = None,
+    mqtt_client: BambuMqttClient | None = None,
 ) -> dict[str, Any]:
-    return {"status": "error", "error_code": "NOT_IMPLEMENTED", "message": "Calibration not yet implemented (Phase 3)"}
+    valid_types = {"flow_dynamics", "nozzle_offset", "bed_leveling"}
+    if calibration_type not in valid_types:
+        return {
+            "status": "error",
+            "error_code": "CALIBRATION_UNSUPPORTED",
+            "message": f"Unknown calibration type: {calibration_type}. Valid: {', '.join(sorted(valid_types))}",
+        }
+
+    if printer_model:
+        registry = PrinterRegistry(bambu_studio_path=None)
+        printer = registry.get(printer_model)
+        if printer:
+            if calibration_type == "flow_dynamics" and not getattr(
+                printer, "support_auto_flow_calibration", True
+            ):
+                return {
+                    "status": "error",
+                    "error_code": "CALIBRATION_UNSUPPORTED",
+                    "message": f"{printer.display_name} does not support flow dynamics calibration",
+                }
+
+    if mock:
+        return {
+            "status": "success",
+            "message": f"Calibration '{calibration_type}' command sent (mock). Monitor progress via printer_status.",
+        }
+
+    if mqtt_client and mqtt_client.is_connected:
+        gcode_map = {
+            "flow_dynamics": "M1002",
+            "bed_leveling": "G29",
+            "nozzle_offset": "M1005",
+        }
+        cmd = commands.build_gcode(gcode_map[calibration_type])
+        mqtt_client.publish_command(json.dumps(cmd))
+        return {
+            "status": "success",
+            "message": f"Calibration '{calibration_type}' command sent. Monitor progress via printer_status.",
+        }
+
+    return {
+        "status": "error",
+        "error_code": "PRINTER_OFFLINE",
+        "message": "MQTT client not connected",
+    }
 
 
 async def camera_snapshot_impl(
     camera: str = "liveview",
+    mock: bool = False,
+    workspace: str = "/tmp",
 ) -> dict[str, Any]:
-    return {"status": "error", "error_code": "NOT_IMPLEMENTED", "message": "Camera snapshot not yet implemented (Phase 3)"}
+    from bambu_forge.printer.camera import capture_snapshot
+
+    return await capture_snapshot(camera=camera, mock=mock, workspace=workspace)
 
 
 def register_printer_tools(mcp, get_config, get_registry, get_mqtt_client=None):
@@ -305,10 +356,20 @@ def register_printer_tools(mcp, get_config, get_registry, get_mqtt_client=None):
 
     @mcp.tool()
     async def calibrate(calibration_type: str) -> dict[str, Any]:
-        """Run a calibration routine (Phase 3 stub)."""
-        return await calibrate_impl(calibration_type=calibration_type)
+        """Run printer calibration: flow_dynamics, bed_leveling, or nozzle_offset."""
+        cfg = get_config()
+        return await calibrate_impl(
+            calibration_type=calibration_type,
+            mock=cfg.mock_mode,
+            printer_model=cfg.printer_model,
+            mqtt_client=_client(cfg),
+        )
 
     @mcp.tool()
     async def camera_snapshot(camera: str = "liveview") -> dict[str, Any]:
-        """Take a camera snapshot (Phase 3 stub)."""
-        return await camera_snapshot_impl(camera=camera)
+        """Take a camera snapshot from the printer's liveview or chamber camera."""
+        cfg = get_config()
+        return await camera_snapshot_impl(
+            camera=camera,
+            mock=cfg.mock_mode,
+        )
