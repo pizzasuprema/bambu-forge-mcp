@@ -4,6 +4,9 @@ from bambu_forge.profiles.tools import (
     delete_profile_impl,
     get_profile_impl,
     list_profiles_impl,
+    log_print_outcome_impl,
+    list_print_history_impl,
+    get_print_insights_impl,
     save_profile_impl,
 )
 
@@ -92,3 +95,44 @@ async def test_recommend_profile_generated(tmp_path):
     assert result["status"] == "success"
     assert result["recommendation_type"] == "generated"
     assert "settings" in result
+
+
+@pytest.mark.asyncio
+async def test_log_and_list_history(tmp_path):
+    db = str(tmp_path / "test.db")
+    await log_print_outcome_impl(
+        design_name="Benchy",
+        outcome="success",
+        quality_grade="excellent",
+        db_path=db,
+    )
+    result = await list_print_history_impl(db_path=db)
+    assert result["status"] == "success"
+    assert len(result["history"]) == 1
+    assert result["history"][0]["design_name"] == "Benchy"
+    assert result["history"][0]["outcome"] == "success"
+
+
+@pytest.mark.asyncio
+async def test_get_insights_empty(tmp_path):
+    db = str(tmp_path / "test.db")
+    result = await get_print_insights_impl(db_path=db)
+    assert result["status"] == "success"
+    assert result["insights"]["total_prints"] == 0
+    assert result["insights"]["success_rate"] == 0.0
+
+
+@pytest.mark.asyncio
+async def test_get_insights_with_data(tmp_path):
+    db = str(tmp_path / "test.db")
+    await log_print_outcome_impl(design_name="A", outcome="success", db_path=db)
+    await log_print_outcome_impl(design_name="B", outcome="success", db_path=db)
+    await log_print_outcome_impl(
+        design_name="C", outcome="failure", failure_mode="adhesion", db_path=db,
+    )
+    result = await get_print_insights_impl(db_path=db)
+    assert result["status"] == "success"
+    insights = result["insights"]
+    assert insights["total_prints"] == 3
+    assert insights["success_rate"] == pytest.approx(2 / 3, abs=0.01)
+    assert insights["most_common_failure_mode"] == "adhesion"

@@ -156,6 +156,78 @@ async def recommend_profile_impl(
         store.close()
 
 
+def _default_history_db_path(get_config) -> Path:
+    cfg = get_config()
+    data_dir = Path(cfg.data_dir) if hasattr(cfg, "data_dir") and cfg.data_dir else Path.home() / ".bambu-forge"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    return data_dir / "history.db"
+
+
+async def log_print_outcome_impl(
+    design_name: str,
+    outcome: str,
+    quality_grade: str | None = None,
+    failure_mode: str | None = None,
+    notes: str | None = None,
+    profile_name: str | None = None,
+    printer_model: str | None = None,
+    filament_type: str | None = None,
+    filament_grams: float = 0.0,
+    print_time_minutes: int = 0,
+    settings: dict[str, Any] | None = None,
+    db_path: str | Path | None = None,
+) -> dict[str, Any]:
+    from bambu_forge.profiles.history import PrintHistoryStore
+
+    store = PrintHistoryStore(db_path=db_path or "history.db")
+    try:
+        row_id = store.log_print(
+            design_name=design_name,
+            profile_name=profile_name or "",
+            printer_model=printer_model or "",
+            filament_type=filament_type or "",
+            filament_grams=filament_grams,
+            print_time_minutes=print_time_minutes,
+            outcome=outcome,
+            quality_grade=quality_grade,
+            failure_mode=failure_mode,
+            settings=settings,
+            notes=notes,
+        )
+        return {"status": "success", "id": row_id, "message": f"Print outcome logged: {outcome}"}
+    finally:
+        store.close()
+
+
+async def list_print_history_impl(
+    limit: int = 20,
+    outcome: str | None = None,
+    db_path: str | Path | None = None,
+) -> dict[str, Any]:
+    from bambu_forge.profiles.history import PrintHistoryStore
+
+    store = PrintHistoryStore(db_path=db_path or "history.db")
+    try:
+        entries = store.list_history(limit=limit, outcome=outcome)
+        return {"status": "success", "history": entries, "count": len(entries)}
+    finally:
+        store.close()
+
+
+async def get_print_insights_impl(
+    printer_model: str | None = None,
+    db_path: str | Path | None = None,
+) -> dict[str, Any]:
+    from bambu_forge.profiles.history import PrintHistoryStore
+
+    store = PrintHistoryStore(db_path=db_path or "history.db")
+    try:
+        insights = store.get_insights(printer_model=printer_model)
+        return {"status": "success", "insights": insights}
+    finally:
+        store.close()
+
+
 async def import_studio_config_impl(
     studio_path: str | None = None,
 ) -> dict[str, Any]:
@@ -237,3 +309,37 @@ def register_profile_tools(mcp, get_config):
     async def import_studio_config(studio_path: str | None = None) -> dict[str, Any]:
         """Import profiles from a local Bambu Studio installation (Phase 3 stub)."""
         return await import_studio_config_impl(studio_path=studio_path)
+
+    @mcp.tool()
+    async def log_print_outcome(
+        design_name: str,
+        outcome: str,
+        quality_grade: str | None = None,
+        failure_mode: str | None = None,
+        notes: str | None = None,
+    ) -> dict[str, Any]:
+        """Log the outcome of a completed print: success, failure, or cancelled."""
+        db = _default_history_db_path(get_config)
+        return await log_print_outcome_impl(
+            design_name=design_name,
+            outcome=outcome,
+            quality_grade=quality_grade,
+            failure_mode=failure_mode,
+            notes=notes,
+            db_path=db,
+        )
+
+    @mcp.tool()
+    async def list_print_history(
+        limit: int = 20,
+        outcome: str | None = None,
+    ) -> dict[str, Any]:
+        """List recent print history, optionally filtered by outcome (success/failure/cancelled)."""
+        db = _default_history_db_path(get_config)
+        return await list_print_history_impl(limit=limit, outcome=outcome, db_path=db)
+
+    @mcp.tool()
+    async def get_print_insights() -> dict[str, Any]:
+        """Get print insights: total prints, success rate, avg time, filament usage, common failures."""
+        db = _default_history_db_path(get_config)
+        return await get_print_insights_impl(db_path=db)
