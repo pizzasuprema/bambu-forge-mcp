@@ -1,4 +1,4 @@
-"""MCP tools for model slicing."""
+"""MCP tools for model slicing and printability analysis."""
 
 from __future__ import annotations
 
@@ -33,3 +33,11 @@ def register_prepare_tools(mcp, get_config):
             mock=mock,
         )
         return result
+
+    @mcp.tool()
+    async def analyze_printability(file_path: str) -> dict[str, Any]:
+        """Analyze a 3D model for printability issues (overhangs, thin walls, bridging, adhesion, supports, warping, thermal stress)."""
+        cfg = get_config()
+        from bambu_forge.prepare.analyzer import analyze_printability as _analyze
+
+        return _analyze(file_path, printer_model=cfg.printer_model)
