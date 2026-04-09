@@ -109,7 +109,7 @@ def register_model_tools(mcp, get_config):
             description=description, style=style, mock=cfg.mock_mode
         )
 
-    @mcp.tool()
+    @mcp.tool(name="check_generation")
     async def check_generation_status(job_id: str) -> dict[str, Any]:
         """Check status of an AI generation job. Downloads mesh on completion."""
         from bambu_forge.model.ai_generator import check_generation
@@ -119,7 +119,7 @@ def register_model_tools(mcp, get_config):
             job_id=job_id, workspace=cfg.workspace_models_dir, mock=cfg.mock_mode
         )
 
-    @mcp.tool()
+    @mcp.tool(name="modify_model")
     async def modify_model_tool(
         file_path: str,
         operations: str,
@@ -134,7 +134,7 @@ def register_model_tools(mcp, get_config):
         ) + "_modified.stl"
         return modify_model(file_path, ops, output_path)
 
-    @mcp.tool()
+    @mcp.tool(name="combine_models")
     async def combine_models_tool(
         file_a: str,
         file_b: str,
@@ -149,7 +149,7 @@ def register_model_tools(mcp, get_config):
         )
         return combine_models(file_a, file_b, operation, output_path)
 
-    @mcp.tool()
+    @mcp.tool(name="generate_2d_pattern")
     async def generate_2d_pattern_tool(
         code: str,
         output_format: str = "svg",
@@ -163,7 +163,7 @@ def register_model_tools(mcp, get_config):
         output_path = str(ws / f"pattern.{output_format}")
         return generate_2d_pattern(code, output_format, output_path, str(ws))
 
-    @mcp.tool()
+    @mcp.tool(name="search_marketplace")
     async def search_marketplace_tool(query: str) -> dict[str, Any]:
         """Search MakerWorld for printable 3D models matching a query."""
         from bambu_forge.model.marketplace import search_marketplace

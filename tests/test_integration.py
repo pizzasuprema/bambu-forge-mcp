@@ -35,11 +35,11 @@ async def test_all_tools_registered():
         "list_designs",
         # Model — Phase 3
         "generate_model_ai",
-        "check_generation_status",
-        "modify_model_tool",
-        "combine_models_tool",
-        "generate_2d_pattern_tool",
-        "search_marketplace_tool",
+        "check_generation",
+        "modify_model",
+        "combine_models",
+        "generate_2d_pattern",
+        "search_marketplace",
         # Prepare
         "slice_model",
         "analyze_printability",
