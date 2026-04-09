@@ -70,8 +70,8 @@ def _parse_objects(obj_list: Any) -> list[dict[str, Any]]:
 
 def parse_status(raw: dict[str, Any]) -> dict[str, Any]:
     p = raw.get("print") if isinstance(raw.get("print"), dict) else {}
-    ams_block = raw.get("ams")
-    hms = raw.get("hms")
+    ams_block = raw.get("ams") or (p.get("ams") if isinstance(p, dict) else None)
+    hms = raw.get("hms") or (p.get("hms") if isinstance(p, dict) else None)
     errors: list[Any] = list(hms) if isinstance(hms, list) else []
 
     nozzle_cur = _as_float(p.get("nozzle_temper"))

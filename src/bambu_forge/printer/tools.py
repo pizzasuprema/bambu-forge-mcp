@@ -228,7 +228,10 @@ async def manage_printer_impl(
 
     if setting in temp_settings:
         target = temp_settings[setting]
-        temp_val = float(value)
+        try:
+            temp_val = float(value)
+        except (ValueError, TypeError):
+            return {"status": "error", "error_code": "INVALID_VALUE", "message": f"Temperature must be numeric, got: {value!r}"}
         check = validate_temperature(target, temp_val, model)
         if not check.safe:
             return {

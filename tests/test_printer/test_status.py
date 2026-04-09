@@ -69,3 +69,37 @@ def test_parse_status_printing():
     assert out["ams"]["trays"][0]["type"] == "PLA"
     assert len(out["objects"]) == 1
     assert out["objects"][0]["name"] == "phone_stand"
+
+
+def test_parse_status_nested_ams_hms_in_print():
+    """pushall messages nest ams/hms inside the print block."""
+    raw = {
+        "print": {
+            "gcode_state": "RUNNING",
+            "mc_percent": 50,
+            "mc_remaining_time": 30,
+            "nozzle_temper": 210,
+            "nozzle_target_temper": 210,
+            "bed_temper": 60,
+            "bed_target_temper": 60,
+            "ams": {
+                "ams": [
+                    {
+                        "tray": [
+                            {
+                                "tray_type": "PETG",
+                                "tray_color": "FF0000FF",
+                                "remain": 55,
+                            }
+                        ]
+                    }
+                ]
+            },
+            "hms": [{"code": "0300010001", "msg": "AMS filament run out"}],
+        },
+    }
+    out = parse_status(raw)
+    assert len(out["ams"]["trays"]) == 1
+    assert out["ams"]["trays"][0]["type"] == "PETG"
+    assert len(out["errors"]) == 1
+    assert out["errors"][0]["code"] == "0300010001"
