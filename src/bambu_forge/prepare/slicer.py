@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -44,6 +45,25 @@ def mock_slice_result(input_file: str, output_file: str | None = None) -> dict[s
     }
 
 
+def _parse_slicer_output(output: str) -> dict[str, Any]:
+    """Best-effort extraction of metrics from Bambu Studio CLI output."""
+    metrics: dict[str, Any] = {}
+
+    time_match = re.search(r"total\s+estimated\s+time[:\s]*(\d+)", output, re.IGNORECASE)
+    if time_match:
+        metrics["print_time"] = int(time_match.group(1))
+
+    filament_match = re.search(r"filament\s+used[:\s]*([\d.]+)\s*g", output, re.IGNORECASE)
+    if filament_match:
+        metrics["filament_grams"] = float(filament_match.group(1))
+
+    layer_match = re.search(r"total\s+layers?[:\s]*(\d+)", output, re.IGNORECASE)
+    if layer_match:
+        metrics["layers"] = int(layer_match.group(1))
+
+    return metrics
+
+
 def run_slicer(
     slicer_path: str,
     input_file: str,
@@ -62,9 +82,9 @@ def run_slicer(
         return {
             "success": False,
             "input_file": input_file,
-            "print_time": 0,
-            "filament_grams": 0,
-            "layers": 0,
+            "print_time": None,
+            "filament_grams": None,
+            "layers": None,
             "error": f"Slicer not found: {slicer_path}",
             "output_file": output_file,
         }
@@ -92,18 +112,20 @@ def run_slicer(
             return {
                 "success": False,
                 "input_file": input_file,
-                "print_time": 0,
-                "filament_grams": 0,
-                "layers": 0,
+                "print_time": None,
+                "filament_grams": None,
+                "layers": None,
                 "error": error,
                 "output_file": output_file,
             }
+
+        metrics = _parse_slicer_output(result.stdout + "\n" + result.stderr)
         return {
             "success": True,
             "input_file": input_file,
-            "print_time": 0,
-            "filament_grams": 0,
-            "layers": 0,
+            "print_time": metrics.get("print_time"),
+            "filament_grams": metrics.get("filament_grams"),
+            "layers": metrics.get("layers"),
             "error": "",
             "output_file": output_file,
         }
@@ -111,9 +133,9 @@ def run_slicer(
         return {
             "success": False,
             "input_file": input_file,
-            "print_time": 0,
-            "filament_grams": 0,
-            "layers": 0,
+            "print_time": None,
+            "filament_grams": None,
+            "layers": None,
             "error": f"Slicer timeout: exceeded {timeout}s",
             "output_file": output_file,
         }
@@ -121,9 +143,9 @@ def run_slicer(
         return {
             "success": False,
             "input_file": input_file,
-            "print_time": 0,
-            "filament_grams": 0,
-            "layers": 0,
+            "print_time": None,
+            "filament_grams": None,
+            "layers": None,
             "error": str(exc),
             "output_file": output_file,
         }

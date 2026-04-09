@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -9,6 +10,8 @@ from bambu_forge.printer.status import parse_status
 from bambu_forge.printer import commands
 from bambu_forge.safety import validate_gcode, validate_temperature
 from bambu_forge.printer_registry import PrinterRegistry
+
+logger = logging.getLogger(__name__)
 
 
 def _history_db_path(cfg) -> str | None:
@@ -123,7 +126,7 @@ def _log_print_start(file_path: str, history_db_path: str | None = None):
         finally:
             store.close()
     except Exception:
-        pass
+        logger.debug("Failed to log print start for %s", file_path, exc_info=True)
 
 
 async def control_print_impl(
@@ -350,7 +353,7 @@ def register_printer_tools(mcp, get_config, get_registry, get_mqtt_client=None, 
 
     @mcp.tool()
     async def start_print(file_path: str, plate_index: int = 0) -> dict[str, Any]:
-        """Start a print job. In mock mode returns success. Real mode uploads via FTPS then sends print command."""
+        """Start a print job. In mock mode returns success. Real mode sends a print command via MQTT."""
         cfg = get_config()
         history_db = _history_db_path(cfg)
         return await start_print_impl(
@@ -372,13 +375,20 @@ def register_printer_tools(mcp, get_config, get_registry, get_mqtt_client=None, 
         """Send a single G-code line. Validated against safety blocklist before sending."""
         cfg = get_config()
         reg = get_registry()
-        return await send_gcode_impl(
+        result = await send_gcode_impl(
             gcode=gcode,
             mock=cfg.mock_mode,
             printer_model=cfg.printer_model,
             registry=reg,
             mqtt_client=_client(cfg),
         )
+        if result.get("status") == "success":
+            normalized = gcode.strip().upper()
+            if normalized.startswith(("M104", "M140", "M190", "M109")):
+                wd = get_watchdog() if get_watchdog else None
+                if wd is not None:
+                    wd.notify_user_temp_command()
+        return result
 
     @mcp.tool()
     async def manage_ams(action: str, params: str | None = None) -> dict[str, Any]:

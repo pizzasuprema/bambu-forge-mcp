@@ -178,10 +178,6 @@ Calls `recommend_profile` — matches saved profiles against the model geometry,
 
 Calls `save_profile` with base profile and overrides.
 
-> **You:** Import my Bambu Studio profiles
-
-Calls `import_studio_config` — reads your existing profiles with full inheritance resolution.
-
 > **You:** What filaments do I have?
 
 Calls `list_filaments` to show available materials with temperature ranges and properties.
@@ -238,20 +234,18 @@ Calls `list_print_history` — shows recent prints with outcomes, times, and fil
 
 ## All 35 Tools
 
-### Model Generation (10)
+### Model Generation (8)
 
 | Tool | Description |
 |------|-------------|
 | `generate_model` | Create a 3D model from CadQuery code |
-| `generate_model_ai` | Submit an AI text-to-3D generation job (Meshy/Tripo3D) |
+| `generate_model_ai` | Submit an AI text-to-3D generation job (Meshy) |
 | `check_generation` | Poll AI generation job status |
 | `list_designs` | Search/list previous designs from Design DNA store |
 | `modify_model` | Apply operations (scale, rotate, mirror, translate, cut) to a mesh |
 | `combine_models` | Boolean operation (union, difference, intersection) on two meshes |
 | `generate_2d_pattern` | Generate SVG/DXF patterns for laser cutting |
 | `search_marketplace` | Search MakerWorld for existing models |
-| `list_templates` | List available parametric templates |
-| `render_template` | Render a template with custom parameters |
 
 ### Prepare Stage (6)
 
@@ -269,7 +263,7 @@ Calls `list_print_history` — shows recent prints with outcomes, times, and fil
 | Tool | Description |
 |------|-------------|
 | `printer_status` | Full printer state: temps, progress, AMS, errors |
-| `start_print` | Upload and start printing |
+| `start_print` | Start printing via MQTT |
 | `control_print` | Pause, resume, stop, change speed, skip objects |
 | `send_gcode` | Send a single G-code line (safety validated) |
 | `manage_ams` | AMS/Vortek status, switch, configure trays |
@@ -292,10 +286,11 @@ Calls `list_print_history` — shows recent prints with outcomes, times, and fil
 | `list_print_history` | Browse recent print history |
 | `get_print_insights` | Analytics: success rate, filament usage, failure patterns |
 
-### Setup (2)
+### Setup (3)
 
 | Tool | Description |
 |------|-------------|
+| `ping` | Health check — server version, config status, registry status |
 | `discover_printers` | SSDP scan for Bambu Lab printers on LAN |
 | `setup_printer` | Configure printer connection |
 
@@ -305,7 +300,7 @@ Calls `list_print_history` — shows recent prints with outcomes, times, and fil
 
 Four-level safety architecture:
 
-1. **G-code validation** — blocks dangerous commands (firmware reset, EEPROM wipe)
+1. **G-code validation** — blocks dangerous commands (firmware reset, EEPROM save, emergency stop, firmware update, Z probe offset)
 2. **Pre-flight checks** — validates printer state, build volume, material compatibility before every print
 3. **Printer safety profiles** — per-model temperature and axis limits from Bambu Studio configs
 4. **Heater watchdog** — auto-cools idle heaters after 30 minutes
@@ -324,7 +319,6 @@ Four-level safety architecture:
 | `BAMBU_PRINTER_MODEL` | No | Printer model (auto-detected via SSDP) |
 | `BAMBU_FORGE_MOCK` | No | Set to "true" for testing without a printer |
 | `MESHY_API_KEY` | No | For AI model generation via Meshy |
-| `TRIPO3D_API_KEY` | No | For AI model generation via Tripo3D |
 
 ### Config File
 

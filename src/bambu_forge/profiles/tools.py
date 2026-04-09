@@ -266,8 +266,8 @@ async def import_studio_config_impl(
     studio_path: str | None = None,
 ) -> dict[str, Any]:
     return {
-        "status": "success",
-        "message": "Import requires Bambu Studio installation path. Auto-detection coming in Phase 3.",
+        "status": "not_implemented",
+        "message": "Studio profile import is not yet available. Planned for a future release.",
         "studio_path": studio_path,
     }
 

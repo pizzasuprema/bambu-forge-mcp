@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import json
+import logging
 import ssl
 import threading
 import time
@@ -9,6 +10,8 @@ import uuid
 from typing import Any
 
 from paho.mqtt.client import CallbackAPIVersion, Client as MqttClient
+
+logger = logging.getLogger(__name__)
 
 _MOCK_STATUS: dict[str, Any] = {
     "print": {
@@ -86,12 +89,19 @@ class BambuMqttClient:
         body.update(kwargs)
         return json.dumps({"system": body})
 
+    def _on_connect(self, client: MqttClient, _userdata: Any, *args: Any) -> None:
+        logger.info("MQTT connected to %s:%d", self.host, self.port)
+        self._connected = True
+        client.subscribe(self.report_topic)
+
     def _on_message(self, _client: MqttClient, _userdata: Any, msg: Any) -> None:
         try:
             payload = json.loads(msg.payload.decode("utf-8"))
         except (json.JSONDecodeError, UnicodeDecodeError):
+            logger.debug("Ignoring non-JSON MQTT message on %s", msg.topic)
             return
         if not isinstance(payload, dict):
+            logger.debug("Ignoring non-dict MQTT payload on %s", msg.topic)
             return
 
         with self._lock:
@@ -118,6 +128,7 @@ class BambuMqttClient:
                 self._status_updated_at = time.monotonic()
 
     def _on_disconnect(self, _client: MqttClient, _userdata: Any, *args: Any) -> None:
+        logger.warning("MQTT disconnected from %s:%d", self.host, self.port)
         self._connected = False
 
     def connect(self) -> None:
@@ -135,8 +146,10 @@ class BambuMqttClient:
         tls_context.check_hostname = False
         tls_context.verify_mode = ssl.CERT_NONE
         client.tls_set_context(tls_context)
+        client.on_connect = self._on_connect
         client.on_message = self._on_message
         client.on_disconnect = self._on_disconnect
+        client.reconnect_delay_set(min_delay=1, max_delay=60)
         client.connect(self.host, self.port, keepalive=60)
         client.subscribe(self.report_topic)
         client.loop_start()
@@ -170,7 +183,7 @@ class BambuMqttClient:
             try:
                 self.connect()
             except Exception:
-                pass
+                logger.debug("MQTT reconnect failed during get_cached_status", exc_info=True)
         now = time.monotonic()
         with self._lock:
             stale = (

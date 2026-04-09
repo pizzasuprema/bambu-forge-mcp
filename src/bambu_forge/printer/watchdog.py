@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import time
 
 from bambu_forge.printer.commands import build_temp
+
+logger = logging.getLogger(__name__)
 
 
 class HeaterWatchdog:
@@ -46,8 +49,10 @@ class HeaterWatchdog:
             return
 
         if nozzle > 30:
+            logger.info("Watchdog: cooling idle nozzle (was %d°C)", nozzle)
             self._mqtt_client.publish_command(json.dumps(build_temp("nozzle", 0)))
         if bed > 30:
+            logger.info("Watchdog: cooling idle bed (was %d°C)", bed)
             self._mqtt_client.publish_command(json.dumps(build_temp("bed", 0)))
 
     async def _check_loop(self):

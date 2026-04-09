@@ -98,8 +98,9 @@ def register_model_tools(mcp, get_config):
         code: str,
         output_name: str = "model",
         open_in_bambu_studio: bool = True,
+        parent_id: int | None = None,
     ) -> dict[str, Any]:
-        """Generate a 3D model from CadQuery code and save to the Design DNA store. Opens the result in Bambu Studio for preview by default."""
+        """Generate a 3D model from CadQuery code and save to the Design DNA store. Opens the result in Bambu Studio for preview by default. Pass parent_id to link this design to a previous iteration."""
         cfg = get_config()
         workspace = cfg.workspace_models_dir
         db_path = cfg.design_db_path
@@ -108,6 +109,7 @@ def register_model_tools(mcp, get_config):
             output_name=output_name,
             workspace=workspace,
             db_path=db_path,
+            parent_id=parent_id,
         )
         if result.get("status") == "success" and result.get("valid") and open_in_bambu_studio:
             import subprocess, sys, time
@@ -182,8 +184,20 @@ def register_model_tools(mcp, get_config):
                 "error_code": "INVALID_JSON",
                 "message": f"operations is not valid JSON: {e}",
             }
+        if not isinstance(ops, list):
+            return {
+                "status": "error",
+                "error_code": "INVALID_JSON",
+                "message": "operations must be a JSON array, got: " + type(ops).__name__,
+            }
         ws = Path(cfg.workspace_models_dir)
         ws.mkdir(parents=True, exist_ok=True)
+        if not str(Path(file_path).resolve()).startswith(str(ws.resolve())):
+            return {
+                "status": "error",
+                "error_code": "INVALID_PATH",
+                "message": "file_path must be inside the workspace directory",
+            }
         output_path = str(ws / f"{Path(file_path).stem}_modified_{_short_id()}.stl")
         return modify_model(file_path, ops, output_path)
 
@@ -199,6 +213,14 @@ def register_model_tools(mcp, get_config):
         cfg = get_config()
         ws = Path(cfg.workspace_models_dir)
         ws.mkdir(parents=True, exist_ok=True)
+        ws_resolved = str(ws.resolve())
+        for label, fp in [("file_a", file_a), ("file_b", file_b)]:
+            if not str(Path(fp).resolve()).startswith(ws_resolved):
+                return {
+                    "status": "error",
+                    "error_code": "INVALID_PATH",
+                    "message": f"{label} must be inside the workspace directory",
+                }
         output_path = str(ws / f"combined_{_short_id()}.stl")
         return combine_models(file_a, file_b, operation, output_path)
 

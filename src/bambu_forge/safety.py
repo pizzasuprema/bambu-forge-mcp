@@ -7,8 +7,11 @@ from dataclasses import dataclass
 from bambu_forge.printer_registry import PrinterModel
 
 _BLOCKED_GCODES: dict[str, str] = {
-    "M502": "firmware reset",
-    "M500": "EEPROM save without prior M501",
+    "M502": "firmware reset — restores factory defaults",
+    "M500": "EEPROM save — may persist unintended settings",
+    "M112": "emergency stop — use control_print stop instead",
+    "M997": "firmware update trigger",
+    "M851": "Z probe offset — risks nozzle crash if set incorrectly",
 }
 
 
