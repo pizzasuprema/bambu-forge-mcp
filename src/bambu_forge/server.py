@@ -9,6 +9,7 @@ from fastmcp import FastMCP
 
 from bambu_forge.config import BambuForgeConfig, load_config, save_printer_config
 from bambu_forge.printer_registry import PrinterRegistry
+from bambu_forge.printer.mqtt_client import BambuMqttClient
 from bambu_forge.printer.tools import register_printer_tools
 from bambu_forge.profiles.tools import register_profile_tools
 from bambu_forge.model.tools import register_model_tools
@@ -21,6 +22,7 @@ mcp = FastMCP(
 
 _config: BambuForgeConfig | None = None
 _registry: PrinterRegistry | None = None
+_mqtt_client: BambuMqttClient | None = None
 
 
 def get_config() -> BambuForgeConfig:
@@ -28,6 +30,20 @@ def get_config() -> BambuForgeConfig:
     if _config is None:
         _config = load_config()
     return _config
+
+
+def get_mqtt_client() -> BambuMqttClient:
+    global _mqtt_client
+    if _mqtt_client is None:
+        cfg = get_config()
+        _mqtt_client = BambuMqttClient(
+            host=cfg.printer_ip or "127.0.0.1",
+            access_code=cfg.access_code or "",
+            serial=cfg.printer_serial or "",
+            mock=cfg.mock_mode,
+        )
+        _mqtt_client.connect()
+    return _mqtt_client
 
 
 def get_registry() -> PrinterRegistry:
@@ -67,7 +83,7 @@ async def ping() -> dict:
     }
 
 
-register_printer_tools(mcp, get_config, get_registry)
+register_printer_tools(mcp, get_config, get_registry, get_mqtt_client)
 register_profile_tools(mcp, get_config)
 register_model_tools(mcp, get_config)
 register_prepare_tools(mcp, get_config)

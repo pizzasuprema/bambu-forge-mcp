@@ -230,19 +230,19 @@ async def camera_snapshot_impl(
     return {"status": "success", "message": "Camera snapshot not yet implemented (Phase 3)"}
 
 
-def register_printer_tools(mcp, get_config, get_registry):
+def register_printer_tools(mcp, get_config, get_registry, get_mqtt_client=None):
+    def _client(cfg):
+        if get_mqtt_client is not None:
+            return get_mqtt_client()
+        if cfg.mock_mode:
+            return _mock_mqtt_client()
+        return None
+
     @mcp.tool()
     async def printer_status() -> dict[str, Any]:
         """Get current printer status including temperatures, progress, AMS state, and errors."""
         cfg = get_config()
-        client = BambuMqttClient(
-            host=cfg.printer_ip or "127.0.0.1",
-            access_code=cfg.access_code or "",
-            serial=cfg.printer_serial or "",
-            mock=cfg.mock_mode,
-        )
-        client.connect()
-        return await printer_status_impl(mock=cfg.mock_mode, mqtt_client=client)
+        return await printer_status_impl(mock=cfg.mock_mode, mqtt_client=_client(cfg))
 
     @mcp.tool()
     async def start_print(file_path: str, plate_index: int = 0) -> dict[str, Any]:
@@ -252,13 +252,14 @@ def register_printer_tools(mcp, get_config, get_registry):
             file_path=file_path,
             plate_index=plate_index,
             mock=cfg.mock_mode,
+            mqtt_client=_client(cfg),
         )
 
     @mcp.tool()
     async def control_print(action: str, value: str | int | None = None) -> dict[str, Any]:
         """Control an active print: pause, resume, stop, speed (profile name), skip_object (index)."""
         cfg = get_config()
-        return await control_print_impl(action=action, value=value, mock=cfg.mock_mode)
+        return await control_print_impl(action=action, value=value, mock=cfg.mock_mode, mqtt_client=_client(cfg))
 
     @mcp.tool()
     async def send_gcode(gcode: str) -> dict[str, Any]:
@@ -270,13 +271,21 @@ def register_printer_tools(mcp, get_config, get_registry):
             mock=cfg.mock_mode,
             printer_model=cfg.printer_model,
             registry=reg,
+            mqtt_client=_client(cfg),
         )
 
     @mcp.tool()
-    async def manage_ams(action: str) -> dict[str, Any]:
-        """AMS management: status (tray info), switch, configure, or unload."""
+    async def manage_ams(action: str, params: str | None = None) -> dict[str, Any]:
+        """AMS management: status (tray info), switch, configure, or unload. Params is an optional JSON string."""
         cfg = get_config()
-        return await manage_ams_impl(action=action, mock=cfg.mock_mode)
+        parsed_params = None
+        if params is not None:
+            import json as _json
+            try:
+                parsed_params = _json.loads(params)
+            except (ValueError, TypeError):
+                return {"status": "error", "error_code": "INVALID_PARAMS", "message": "params must be valid JSON"}
+        return await manage_ams_impl(action=action, params=parsed_params, mock=cfg.mock_mode, mqtt_client=_client(cfg))
 
     @mcp.tool()
     async def manage_printer(setting: str, value: str | int = 0) -> dict[str, Any]:
@@ -289,6 +298,7 @@ def register_printer_tools(mcp, get_config, get_registry):
             mock=cfg.mock_mode,
             printer_model=cfg.printer_model,
             registry=reg,
+            mqtt_client=_client(cfg),
         )
 
     @mcp.tool()

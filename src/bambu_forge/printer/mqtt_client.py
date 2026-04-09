@@ -93,17 +93,25 @@ class BambuMqttClient:
             return
         if not isinstance(payload, dict):
             return
-        print_update = payload.get("print")
-        if isinstance(print_update, dict):
-            with self._lock:
-                if self._cached_status is None:
-                    self._cached_status = {}
-                slot = self._cached_status.setdefault("print", {})
-                if not isinstance(slot, dict):
-                    slot = {}
-                    self._cached_status["print"] = slot
-                slot.update(print_update)
+
+        with self._lock:
+            if self._cached_status is None:
+                self._cached_status = {}
+
+            for key in ("print", "ams", "hms"):
+                update = payload.get(key)
+                if isinstance(update, dict):
+                    slot = self._cached_status.setdefault(key, {})
+                    if not isinstance(slot, dict):
+                        slot = {}
+                        self._cached_status[key] = slot
+                    slot.update(update)
+
+            if any(isinstance(payload.get(k), dict) for k in ("print", "ams", "hms")):
                 self._status_updated_at = time.monotonic()
+
+    def _on_disconnect(self, _client: MqttClient, _userdata: Any, *args: Any) -> None:
+        self._connected = False
 
     def connect(self) -> None:
         if self._mock:
@@ -118,6 +126,7 @@ class BambuMqttClient:
         tls_context.verify_mode = ssl.CERT_NONE
         client.tls_set_context(tls_context)
         client.on_message = self._on_message
+        client.on_disconnect = self._on_disconnect
         client.connect(self.host, self.port, keepalive=60)
         client.subscribe(self.report_topic)
         client.loop_start()
@@ -147,6 +156,11 @@ class BambuMqttClient:
         self._client.publish(self.request_topic, payload)
 
     def get_cached_status(self, max_age_seconds: float = 5.0) -> dict[str, Any] | None:
+        if not self._connected:
+            try:
+                self.connect()
+            except Exception:
+                pass
         now = time.monotonic()
         with self._lock:
             stale = (
