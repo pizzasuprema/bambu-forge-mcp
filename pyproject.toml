@@ -1,0 +1,32 @@
+[project]
+name = "bambu-forge-mcp"
+version = "0.1.0"
+description = "All-in-one MCP server for Bambu Lab 3D printers"
+requires-python = ">=3.10"
+license = "MIT"
+dependencies = [
+    "fastmcp",
+    "paho-mqtt",
+    "trimesh[easy]",
+    "numpy",
+    "httpx",
+    "cadquery",
+    "svgwrite",
+    "ezdxf",
+]
+
+[project.scripts]
+bambu-forge-mcp = "bambu_forge.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/bambu_forge"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-asyncio"]
