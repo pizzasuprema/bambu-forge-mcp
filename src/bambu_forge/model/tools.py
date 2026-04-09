@@ -148,3 +148,17 @@ def register_model_tools(mcp, get_config):
             Path(cfg.workspace_models_dir) / "combined.stl"
         )
         return combine_models(file_a, file_b, operation, output_path)
+
+    @mcp.tool()
+    async def generate_2d_pattern_tool(
+        code: str,
+        output_format: str = "svg",
+    ) -> dict[str, Any]:
+        """Generate a 2D pattern (SVG or DXF) from user code for laser cutting."""
+        from bambu_forge.model.pattern_2d import generate_2d_pattern
+
+        cfg = get_config()
+        ws = Path(cfg.workspace_models_dir)
+        ws.mkdir(parents=True, exist_ok=True)
+        output_path = str(ws / f"pattern.{output_format}")
+        return generate_2d_pattern(code, output_format, output_path, str(ws))
