@@ -93,15 +93,65 @@ async def list_filaments_impl(
 
 
 async def recommend_profile_impl(
-    material: str | None = None,
-    model_type: str | None = None,
+    file_path: str,
+    priorities: str = "quality",
+    db_path: str | Path | None = None,
+    printer_model: str | None = None,
 ) -> dict[str, Any]:
-    return {
-        "status": "success",
-        "message": "Profile recommendation engine coming in Phase 3",
-        "material": material,
-        "model_type": model_type,
-    }
+    from bambu_forge.prepare.optimizer import optimize_settings
+
+    optimized = optimize_settings(file_path, priorities, printer_model)
+    if optimized["status"] != "success":
+        return optimized
+
+    ideal = optimized["settings"]
+
+    store = ProfileStore(db_path=db_path or "profiles.db")
+    try:
+        profiles = store.list_profiles(profile_type="process")
+        if not profiles:
+            return {
+                "status": "success",
+                "recommendation_type": "generated",
+                "settings": ideal,
+                "adjustments": optimized.get("adjustments", []),
+                "message": "No saved profiles found. Using optimized settings.",
+            }
+
+        best_match = None
+        best_score = -1
+        for p in profiles:
+            full = store.get_profile(p["name"])
+            if not full or not full.get("overrides"):
+                continue
+            overrides = full["overrides"]
+            score = sum(1 for k, v in ideal.items() if overrides.get(k) == v)
+            if score > best_score:
+                best_score = score
+                best_match = full
+
+        if best_match and best_score > 0:
+            return {
+                "status": "success",
+                "recommendation_type": "profile",
+                "profile_name": best_match["name"],
+                "match_score": best_score,
+                "settings": ideal,
+                "message": (
+                    f"Recommended profile: {best_match['name']} "
+                    f"({best_score} matching settings)"
+                ),
+            }
+
+        return {
+            "status": "success",
+            "recommendation_type": "generated",
+            "settings": ideal,
+            "adjustments": optimized.get("adjustments", []),
+            "message": "No matching profiles. Using optimized settings.",
+        }
+    finally:
+        store.close()
 
 
 async def import_studio_config_impl(
@@ -159,11 +209,18 @@ def register_profile_tools(mcp, get_config):
 
     @mcp.tool()
     async def recommend_profile(
-        material: str | None = None,
-        model_type: str | None = None,
+        file_path: str,
+        priorities: str = "quality",
+        printer_model: str | None = None,
     ) -> dict[str, Any]:
-        """Recommend optimal print profile based on material and model type (Phase 3 stub)."""
-        return await recommend_profile_impl(material=material, model_type=model_type)
+        """Recommend a saved process profile or geometry-optimized settings for a mesh file."""
+        db = _default_db_path(get_config)
+        return await recommend_profile_impl(
+            file_path=file_path,
+            priorities=priorities,
+            db_path=db,
+            printer_model=printer_model,
+        )
 
     @mcp.tool()
     async def list_filaments(filter_text: str | None = None) -> dict[str, Any]:

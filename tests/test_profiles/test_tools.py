@@ -74,3 +74,21 @@ async def test_save_profile_malformed_json(tmp_path):
     )
     assert result["status"] == "error"
     assert "INVALID" in result.get("error_code", "")
+
+
+@pytest.mark.asyncio
+async def test_recommend_profile_generated(tmp_path):
+    # No saved profiles → should return generated recommendation
+    from bambu_forge.profiles.tools import recommend_profile_impl
+    import trimesh
+
+    box = trimesh.creation.box(extents=[50, 50, 50])
+    mesh_path = str(tmp_path / "box.stl")
+    box.export(mesh_path)
+    db = str(tmp_path / "test.db")
+    result = await recommend_profile_impl(
+        file_path=mesh_path, priorities="quality", db_path=db
+    )
+    assert result["status"] == "success"
+    assert result["recommendation_type"] == "generated"
+    assert "settings" in result
