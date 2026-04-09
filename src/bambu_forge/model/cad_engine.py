@@ -8,10 +8,9 @@ import sys
 import tempfile
 from pathlib import Path
 
-_STRIPPED_ENV_KEYS = frozenset({
-    "BAMBU_ACCESS_CODE",
-    "MESHY_API_KEY",
-    "TRIPO3D_API_KEY",
+_ALLOWED_ENV_KEYS = frozenset({
+    "PATH", "HOME", "LANG", "TMPDIR", "VIRTUAL_ENV",
+    "PYTHONPATH", "LC_ALL", "USER",
 })
 
 
@@ -21,10 +20,10 @@ def execute_cadquery(
     workspace: str,
     timeout: int = 60,
 ) -> dict:
-    safe_output = output_path.replace("\\", "\\\\").replace('"', '\\"')
-    full_code = f'OUTPUT_PATH = "{safe_output}"\n{code}'
+    full_code = f'import os\nOUTPUT_PATH = os.environ["OUTPUT_PATH"]\n{code}'
 
-    env = {k: v for k, v in os.environ.items() if k not in _STRIPPED_ENV_KEYS}
+    env = {k: v for k, v in os.environ.items() if k in _ALLOWED_ENV_KEYS}
+    env["OUTPUT_PATH"] = output_path
 
     tmp_fd, tmp_file = tempfile.mkstemp(suffix=".py", dir=workspace)
     try:
@@ -38,6 +37,7 @@ def execute_cadquery(
             capture_output=True,
             text=True,
             env=env,
+            stdin=subprocess.DEVNULL,
         )
 
         if result.returncode != 0:

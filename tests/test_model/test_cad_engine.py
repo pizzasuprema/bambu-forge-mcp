@@ -1,3 +1,4 @@
+import json
 import os
 
 import pytest
@@ -6,10 +7,10 @@ from bambu_forge.model.cad_engine import execute_cadquery
 
 
 CADQUERY_BOX = """\
-import cadquery as cq
+import os, cadquery as cq
 
 result = cq.Workplane("XY").box(10, 20, 5)
-cq.exporters.export(result, OUTPUT_PATH)
+cq.exporters.export(result, os.environ["OUTPUT_PATH"])
 """
 
 
@@ -38,3 +39,21 @@ def test_execute_syntax_error(tmp_path):
 
     assert result["success"] is False
     assert result["error"]
+
+
+def test_env_stripping(tmp_path, monkeypatch):
+    monkeypatch.setenv("BAMBU_ACCESS_CODE", "supersecret")
+    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "alsosecret")
+    code = '''
+import os, json
+result = {k: v for k, v in os.environ.items()}
+with open(os.environ["OUTPUT_PATH"], "w") as f:
+    json.dump(result, f)
+'''
+    output = tmp_path / "env.json"
+    result = execute_cadquery(code, str(output), str(tmp_path))
+    assert result["success"] is True
+    env_data = json.loads(output.read_text())
+    assert "BAMBU_ACCESS_CODE" not in env_data
+    assert "AWS_SECRET_ACCESS_KEY" not in env_data
+    assert "PATH" in env_data
