@@ -22,6 +22,7 @@ async def test_all_phase1b_tools_registered():
         "optimize_settings",
         "estimate_cost",
         "arrange_plate",
+        "export_project",
         "list_profiles",
         "get_profile",
         "save_profile",

@@ -18,14 +18,18 @@ def arrange_plate(
     gap = 10.0 if strategy == "accessible" else 2.0
 
     parts: list[dict[str, Any]] = []
+    load_errors: list[str] = []
     for path in mesh_paths:
-        mesh = trimesh.load(path, force="mesh")
-        dims = mesh.bounds[1] - mesh.bounds[0]
-        parts.append({
-            "file": Path(path).name,
-            "width": float(dims[0]),
-            "depth": float(dims[1]),
-        })
+        try:
+            mesh = trimesh.load(path, force="mesh")
+            dims = mesh.bounds[1] - mesh.bounds[0]
+            parts.append({
+                "file": Path(path).name,
+                "width": float(dims[0]),
+                "depth": float(dims[1]),
+            })
+        except Exception:
+            load_errors.append(Path(path).name)
 
     if strategy == "batch" and parts:
         original = parts[0]
@@ -52,6 +56,8 @@ def arrange_plate(
             })
         else:
             overflow.append(part["file"])
+
+    overflow.extend(f"{f} (load failed)" for f in load_errors)
 
     placed_area = sum(w * h for _, _, w, h in placed)
     plate_area = plate_w * plate_h

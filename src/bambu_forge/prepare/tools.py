@@ -92,3 +92,14 @@ def register_prepare_tools(mcp, get_config, get_registry=None):
                 build_volume = tuple(printer.build_volume)
 
         return _arrange(paths, strategy=strategy, build_volume=build_volume)
+
+    @mcp.tool()
+    async def export_project(
+        file_paths: str, output_path: str, profile_name: str | None = None
+    ) -> dict[str, Any]:
+        """Export a complete 3MF project with models, profiles, and plate layout (planned for future release)."""
+        return {
+            "status": "error",
+            "error_code": "NOT_IMPLEMENTED",
+            "message": "export_project is planned for a future release",
+        }
