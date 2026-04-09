@@ -283,7 +283,7 @@ async def camera_snapshot_impl(
     return await capture_snapshot(camera=camera, mock=mock, workspace=workspace)
 
 
-def register_printer_tools(mcp, get_config, get_registry, get_mqtt_client=None):
+def register_printer_tools(mcp, get_config, get_registry, get_mqtt_client=None, get_watchdog=None):
     def _client(cfg):
         if get_mqtt_client is not None:
             return get_mqtt_client()
@@ -345,7 +345,7 @@ def register_printer_tools(mcp, get_config, get_registry, get_mqtt_client=None):
         """Adjust printer settings: nozzle_temp, bed_temp, chamber_temp, chamber_light, bed_light, sound."""
         cfg = get_config()
         reg = get_registry()
-        return await manage_printer_impl(
+        result = await manage_printer_impl(
             setting=setting,
             value=value,
             mock=cfg.mock_mode,
@@ -353,6 +353,11 @@ def register_printer_tools(mcp, get_config, get_registry, get_mqtt_client=None):
             registry=reg,
             mqtt_client=_client(cfg),
         )
+        if result.get("status") == "success" and setting in ("nozzle_temp", "bed_temp", "chamber_temp"):
+            wd = get_watchdog() if get_watchdog else None
+            if wd is not None:
+                wd.notify_user_temp_command()
+        return result
 
     @mcp.tool()
     async def calibrate(calibration_type: str) -> dict[str, Any]:

@@ -47,6 +47,7 @@ def get_mqtt_client() -> BambuMqttClient:
         from bambu_forge.printer.watchdog import HeaterWatchdog
 
         _watchdog = HeaterWatchdog(mqtt_client=_mqtt_client)
+        _watchdog.start()
     return _mqtt_client
 
 
@@ -87,7 +88,11 @@ async def ping() -> dict:
     }
 
 
-register_printer_tools(mcp, get_config, get_registry, get_mqtt_client)
+def get_watchdog():
+    return _watchdog
+
+
+register_printer_tools(mcp, get_config, get_registry, get_mqtt_client, get_watchdog)
 register_profile_tools(mcp, get_config)
 register_model_tools(mcp, get_config)
 register_prepare_tools(mcp, get_config, get_registry)
@@ -140,8 +145,11 @@ async def setup_printer(printer_ip: str) -> dict[str, Any]:
         entry["serial"],
         entry["model"],
     )
-    global _config, _mqtt_client
+    global _config, _mqtt_client, _watchdog
     _config = None
+    if _watchdog is not None:
+        _watchdog.stop()
+        _watchdog = None
     if _mqtt_client is not None:
         _mqtt_client.disconnect()
         _mqtt_client = None
