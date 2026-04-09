@@ -44,3 +44,16 @@ def test_printer_speed_cap(tmp_path):
     assert result["settings"]["print_speed"] < 300
     any_cap_adjustment = any("capped" in a.lower() or "cap" in a.lower() for a in result["adjustments"])
     assert any_cap_adjustment
+
+
+def test_invalid_priority(tmp_path):
+    """Unknown priority returns structured error, not silent defaults."""
+    mesh = trimesh.primitives.Box(extents=(20, 20, 20))
+    mesh_path = tmp_path / "box.stl"
+    mesh.export(str(mesh_path))
+
+    result = optimize_settings(str(mesh_path), priority="fastest")
+
+    assert result["status"] == "error"
+    assert result["error_code"] == "INVALID_PRIORITY"
+    assert "fastest" in result["message"]

@@ -120,26 +120,28 @@ async def recommend_profile_impl(
 
         best_match = None
         best_score = -1
+        max_possible = len(ideal)
         for p in profiles:
-            full = store.get_profile(p["name"])
-            if not full or not full.get("overrides"):
+            overrides = p.get("overrides")
+            if not overrides:
                 continue
-            overrides = full["overrides"]
             score = sum(1 for k, v in ideal.items() if overrides.get(k) == v)
             if score > best_score:
                 best_score = score
-                best_match = full
+                best_match = p
 
         if best_match and best_score > 0:
+            normalized_score = round(best_score / max_possible, 4) if max_possible else 0.0
             return {
                 "status": "success",
                 "recommendation_type": "profile",
                 "profile_name": best_match["name"],
-                "match_score": best_score,
+                "match_score": normalized_score,
+                "max_possible_score": max_possible,
                 "settings": ideal,
                 "message": (
                     f"Recommended profile: {best_match['name']} "
-                    f"({best_score} matching settings)"
+                    f"({best_score}/{max_possible} matching settings)"
                 ),
             }
 

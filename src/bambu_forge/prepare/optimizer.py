@@ -63,9 +63,22 @@ def _compute_geometry_metrics(mesh: trimesh.Trimesh) -> dict[str, Any]:
     }
 
 
+_VALID_PRIORITIES = {"speed", "quality", "strength", "material_efficiency", "silent"}
+
+
 def optimize_settings(
     mesh_path: str, priority: str, printer_model: str | None = None
 ) -> dict[str, Any]:
+    if priority.lower() not in _VALID_PRIORITIES:
+        return {
+            "status": "error",
+            "error_code": "INVALID_PRIORITY",
+            "message": (
+                f"Unknown priority '{priority}'. "
+                f"Valid: {', '.join(sorted(_VALID_PRIORITIES))}"
+            ),
+        }
+
     try:
         mesh = trimesh.load(mesh_path, force="mesh")
     except Exception as exc:
