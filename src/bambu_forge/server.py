@@ -136,8 +136,16 @@ async def setup_printer(printer_ip: str) -> dict[str, Any]:
         entry["serial"],
         entry["model"],
     )
-    global _config
+    global _config, _mqtt_client
     _config = None
+    if _mqtt_client is not None:
+        _mqtt_client.disconnect()
+        _mqtt_client = None
+
+    import os
+    warnings: list[str] = []
+    if not os.environ.get("BAMBU_ACCESS_CODE"):
+        warnings.append("BAMBU_ACCESS_CODE env var is not set; MQTT connection will fail")
 
     return {
         "status": "success",
@@ -148,6 +156,7 @@ async def setup_printer(printer_ip: str) -> dict[str, Any]:
         "name": entry.get("name", ""),
         "firmware": entry.get("firmware", ""),
         "signal": entry.get("signal", ""),
+        **({"warnings": warnings} if warnings else {}),
     }
 
 

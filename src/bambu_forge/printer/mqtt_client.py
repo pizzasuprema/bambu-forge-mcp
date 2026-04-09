@@ -98,16 +98,23 @@ class BambuMqttClient:
             if self._cached_status is None:
                 self._cached_status = {}
 
+            updated = False
             for key in ("print", "ams", "hms"):
                 update = payload.get(key)
-                if isinstance(update, dict):
+                if update is None:
+                    continue
+                if isinstance(update, list):
+                    self._cached_status[key] = update
+                    updated = True
+                elif isinstance(update, dict):
                     slot = self._cached_status.setdefault(key, {})
-                    if not isinstance(slot, dict):
-                        slot = {}
-                        self._cached_status[key] = slot
-                    slot.update(update)
+                    if isinstance(slot, dict):
+                        slot.update(update)
+                    else:
+                        self._cached_status[key] = update
+                    updated = True
 
-            if any(isinstance(payload.get(k), dict) for k in ("print", "ams", "hms")):
+            if updated:
                 self._status_updated_at = time.monotonic()
 
     def _on_disconnect(self, _client: MqttClient, _userdata: Any, *args: Any) -> None:
@@ -119,6 +126,9 @@ class BambuMqttClient:
             return
         if self._connected and self._client is not None:
             return
+        if self._client is not None:
+            self._client.loop_stop()
+            self._client.disconnect()
         client = MqttClient(callback_api_version=CallbackAPIVersion.VERSION2)
         client.username_pw_set("bblp", self._access_code)
         tls_context = ssl.create_default_context()
