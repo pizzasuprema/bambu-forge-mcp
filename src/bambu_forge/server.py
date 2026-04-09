@@ -6,6 +6,7 @@ from fastmcp import FastMCP
 
 from bambu_forge.config import BambuForgeConfig, load_config
 from bambu_forge.printer_registry import PrinterRegistry
+from bambu_forge.printer.tools import register_printer_tools
 
 mcp = FastMCP(
     "bambu-forge",
@@ -58,6 +59,9 @@ async def ping() -> dict:
         "printer_found": printer is not None,
         "registry_models": len(reg.list_models()),
     }
+
+
+register_printer_tools(mcp, get_config, get_registry)
 
 
 def main():
