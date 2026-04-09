@@ -18,6 +18,26 @@ The core server (model generation, printer control, profiles, safety) is fully c
 
 ---
 
+## Prerequisites
+
+| Requirement | Why | Install |
+|-------------|-----|---------|
+| Python >= 3.10 | Runtime | [python.org](https://www.python.org/downloads/) or your system package manager |
+| uv | Package manager, runs the server | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
+| Git | Clone the repo | [git-scm.com](https://git-scm.com/) |
+| Bambu Studio | Slicing and model preview (optional) | [bambulab.com](https://bambulab.com/en/download/studio) |
+
+**Printer setup** (for real printer control, not needed for mock mode):
+
+- Printer and computer on the same local network
+- Printer IP address (found in printer LCD: Settings > Network)
+- Access code (found in printer LCD: Settings > General > Access Code)
+- Serial number (found in printer LCD: Settings > General or on the printer label)
+
+**Note on CadQuery:** The `cadquery` dependency includes OpenCascade (OCP) and downloads pre-built wheels (~200MB). This is handled automatically by `uv sync` on macOS, Windows, and Linux (x86_64). ARM Linux users may need to build OCP from source.
+
+---
+
 ## Quick Start
 
 ### 1. Install
