@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import uuid
 from json import JSONDecodeError
 from pathlib import Path
 from typing import Any
@@ -10,6 +11,10 @@ from typing import Any
 from bambu_forge.mesh_validator import validate_mesh
 from bambu_forge.model.cad_engine import execute_cadquery
 from bambu_forge.model.design_dna import DesignDnaStore
+
+
+def _short_id() -> str:
+    return uuid.uuid4().hex[:8]
 
 
 async def generate_model_impl(
@@ -141,7 +146,7 @@ def register_model_tools(mcp, get_config):
             }
         ws = Path(cfg.workspace_models_dir)
         ws.mkdir(parents=True, exist_ok=True)
-        output_path = str(ws / Path(file_path).stem) + "_modified.stl"
+        output_path = str(ws / f"{Path(file_path).stem}_modified_{_short_id()}.stl")
         return modify_model(file_path, ops, output_path)
 
     @mcp.tool(name="combine_models")
@@ -156,7 +161,7 @@ def register_model_tools(mcp, get_config):
         cfg = get_config()
         ws = Path(cfg.workspace_models_dir)
         ws.mkdir(parents=True, exist_ok=True)
-        output_path = str(ws / "combined.stl")
+        output_path = str(ws / f"combined_{_short_id()}.stl")
         return combine_models(file_a, file_b, operation, output_path)
 
     @mcp.tool(name="generate_2d_pattern")
@@ -170,7 +175,7 @@ def register_model_tools(mcp, get_config):
         cfg = get_config()
         ws = Path(cfg.workspace_models_dir)
         ws.mkdir(parents=True, exist_ok=True)
-        output_path = str(ws / f"pattern.{output_format}")
+        output_path = str(ws / f"pattern_{_short_id()}.{output_format}")
         return generate_2d_pattern(code, output_format, output_path, str(ws))
 
     @mcp.tool(name="search_marketplace")

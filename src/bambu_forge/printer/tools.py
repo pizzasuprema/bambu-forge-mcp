@@ -224,6 +224,7 @@ async def calibrate_impl(
     calibration_type: str,
     mock: bool = False,
     printer_model: str | None = None,
+    registry: PrinterRegistry | None = None,
     mqtt_client: BambuMqttClient | None = None,
 ) -> dict[str, Any]:
     valid_types = {"flow_dynamics", "nozzle_offset", "bed_leveling"}
@@ -235,7 +236,8 @@ async def calibrate_impl(
         }
 
     if printer_model:
-        registry = PrinterRegistry(bambu_studio_path=None)
+        if registry is None:
+            registry = PrinterRegistry(bambu_studio_path=None)
         printer = registry.get(printer_model)
         if printer:
             if calibration_type == "flow_dynamics" and not getattr(
@@ -363,10 +365,12 @@ def register_printer_tools(mcp, get_config, get_registry, get_mqtt_client=None, 
     async def calibrate(calibration_type: str) -> dict[str, Any]:
         """Run printer calibration: flow_dynamics, bed_leveling, or nozzle_offset."""
         cfg = get_config()
+        reg = get_registry()
         return await calibrate_impl(
             calibration_type=calibration_type,
             mock=cfg.mock_mode,
             printer_model=cfg.printer_model,
+            registry=reg,
             mqtt_client=_client(cfg),
         )
 
