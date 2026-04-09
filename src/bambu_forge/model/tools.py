@@ -162,3 +162,11 @@ def register_model_tools(mcp, get_config):
         ws.mkdir(parents=True, exist_ok=True)
         output_path = str(ws / f"pattern.{output_format}")
         return generate_2d_pattern(code, output_format, output_path, str(ws))
+
+    @mcp.tool()
+    async def search_marketplace_tool(query: str) -> dict[str, Any]:
+        """Search MakerWorld for printable 3D models matching a query."""
+        from bambu_forge.model.marketplace import search_marketplace
+
+        cfg = get_config()
+        return await search_marketplace(query, mock=cfg.mock_mode)
