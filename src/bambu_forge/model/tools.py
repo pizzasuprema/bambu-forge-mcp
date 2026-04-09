@@ -118,3 +118,33 @@ def register_model_tools(mcp, get_config):
         return await check_generation(
             job_id=job_id, workspace=cfg.workspace_models_dir, mock=cfg.mock_mode
         )
+
+    @mcp.tool()
+    async def modify_model_tool(
+        file_path: str,
+        operations: str,
+    ) -> dict[str, Any]:
+        """Apply operations (scale, rotate, mirror, translate, cut) to a mesh. operations is a JSON array."""
+        from bambu_forge.model.stl_ops import modify_model
+
+        cfg = get_config()
+        ops = json.loads(operations)
+        output_path = str(
+            Path(cfg.workspace_models_dir) / Path(file_path).stem
+        ) + "_modified.stl"
+        return modify_model(file_path, ops, output_path)
+
+    @mcp.tool()
+    async def combine_models_tool(
+        file_a: str,
+        file_b: str,
+        operation: str = "union",
+    ) -> dict[str, Any]:
+        """Boolean operation (union, difference, intersection) on two meshes."""
+        from bambu_forge.model.stl_ops import combine_models
+
+        cfg = get_config()
+        output_path = str(
+            Path(cfg.workspace_models_dir) / "combined.stl"
+        )
+        return combine_models(file_a, file_b, operation, output_path)
