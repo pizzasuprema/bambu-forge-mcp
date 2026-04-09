@@ -167,7 +167,7 @@ async def manage_ams_impl(
     if action in ("switch", "configure", "unload"):
         if mock:
             return {"status": "success", "message": f"AMS {action} command sent (mock)"}
-        return {"status": "success", "message": f"AMS {action} command sent"}
+        return {"status": "error", "error_code": "NOT_IMPLEMENTED", "message": f"AMS {action} not yet implemented (Phase 3)"}
 
     return {"status": "error", "error_code": "INVALID_ACTION", "message": f"Unknown AMS action: {action}"}
 
@@ -204,7 +204,9 @@ async def manage_printer_impl(
         on = str(value).lower() in ("1", "true", "on")
         payload = commands.build_led(target, on)
     elif setting == "sound":
-        return {"status": "success", "message": f"Sound setting updated to {value} (stub)"}
+        if mock:
+            return {"status": "success", "message": f"Sound setting updated to {value} (mock)"}
+        return {"status": "error", "error_code": "NOT_IMPLEMENTED", "message": "Sound control not yet implemented (Phase 3)"}
     else:
         return {"status": "error", "error_code": "INVALID_SETTING", "message": f"Unknown setting: {setting}"}
 
