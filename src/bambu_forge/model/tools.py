@@ -95,3 +95,26 @@ def register_model_tools(mcp, get_config):
         cfg = get_config()
         db_path = cfg.design_db_path
         return await list_designs_impl(query=query, db_path=db_path)
+
+    @mcp.tool()
+    async def generate_model_ai(
+        description: str,
+        style: str = "realistic",
+    ) -> dict[str, Any]:
+        """Submit an AI text-to-3D generation job. Returns a job_id to poll with check_generation."""
+        from bambu_forge.model.ai_generator import submit_generation
+
+        cfg = get_config()
+        return await submit_generation(
+            description=description, style=style, mock=cfg.mock_mode
+        )
+
+    @mcp.tool()
+    async def check_generation_status(job_id: str) -> dict[str, Any]:
+        """Check status of an AI generation job. Downloads mesh on completion."""
+        from bambu_forge.model.ai_generator import check_generation
+
+        cfg = get_config()
+        return await check_generation(
+            job_id=job_id, workspace=cfg.workspace_models_dir, mock=cfg.mock_mode
+        )
