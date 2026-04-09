@@ -86,17 +86,33 @@ def register_model_tools(mcp, get_config):
     async def generate_model(
         code: str,
         output_name: str = "model",
+        open_in_bambu_studio: bool = True,
     ) -> dict[str, Any]:
-        """Generate a 3D model from CadQuery code and save to the Design DNA store."""
+        """Generate a 3D model from CadQuery code and save to the Design DNA store. Opens the result in Bambu Studio for preview by default."""
         cfg = get_config()
         workspace = cfg.workspace_models_dir
         db_path = cfg.design_db_path
-        return await generate_model_impl(
+        result = await generate_model_impl(
             code=code,
             output_name=output_name,
             workspace=workspace,
             db_path=db_path,
         )
+        if result.get("status") == "success" and open_in_bambu_studio:
+            import subprocess, sys
+            mesh_path = result.get("mesh_path", "")
+            if mesh_path:
+                try:
+                    if sys.platform == "darwin":
+                        subprocess.Popen(["open", "-a", "BambuStudio", mesh_path])
+                    elif sys.platform == "win32":
+                        subprocess.Popen(["start", "", mesh_path], shell=True)
+                    else:
+                        subprocess.Popen(["xdg-open", mesh_path])
+                    result["opened_in_bambu_studio"] = True
+                except Exception:
+                    result["opened_in_bambu_studio"] = False
+        return result
 
     @mcp.tool()
     async def list_designs(query: str | None = None) -> dict[str, Any]:
