@@ -58,3 +58,22 @@ def register_prepare_tools(mcp, get_config):
         from bambu_forge.prepare.cost_estimator import estimate_cost as _estimate
 
         return _estimate(mesh_path=file_path)
+
+    @mcp.tool()
+    async def arrange_plate(
+        file_paths: str, strategy: str = "compact"
+    ) -> dict[str, Any]:
+        """Arrange multiple 3D models on a build plate using bin-packing (compact, accessible, or batch strategy)."""
+        import json as _json
+
+        from bambu_forge.prepare.arranger import arrange_plate as _arrange
+
+        try:
+            paths = _json.loads(file_paths)
+        except (_json.JSONDecodeError, TypeError):
+            paths = [p.strip() for p in file_paths.split(",") if p.strip()]
+
+        if not isinstance(paths, list):
+            paths = [paths]
+
+        return _arrange(paths, strategy=strategy)
