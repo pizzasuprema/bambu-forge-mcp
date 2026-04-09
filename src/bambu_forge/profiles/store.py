@@ -28,6 +28,16 @@ class ProfileStore:
                 properties  TEXT NOT NULL DEFAULT '{}',
                 created_at  TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS spools (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                filament_name   TEXT NOT NULL,
+                filament_type   TEXT NOT NULL,
+                color           TEXT,
+                weight_total_g  REAL NOT NULL,
+                weight_remaining_g REAL NOT NULL,
+                price_per_kg    REAL,
+                created_at      TEXT NOT NULL
+            );
         """)
         self._conn.commit()
 
@@ -99,6 +109,73 @@ class ProfileStore:
                 "SELECT * FROM filaments ORDER BY name"
             ).fetchall()
         return [self._row_to_filament(r) for r in rows]
+
+    def add_spool(
+        self,
+        filament_name: str,
+        filament_type: str,
+        color: str,
+        weight_total_g: float,
+        price_per_kg: float,
+    ) -> int:
+        now = datetime.now(timezone.utc).isoformat()
+        cur = self._conn.execute(
+            """INSERT INTO spools
+               (filament_name, filament_type, color, weight_total_g,
+                weight_remaining_g, price_per_kg, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (filament_name, filament_type, color, weight_total_g,
+             weight_total_g, price_per_kg, now),
+        )
+        self._conn.commit()
+        return cur.lastrowid
+
+    def list_spools(self, filament_type: str | None = None) -> list[dict[str, Any]]:
+        if filament_type:
+            rows = self._conn.execute(
+                "SELECT * FROM spools WHERE filament_type = ? ORDER BY id",
+                (filament_type,),
+            ).fetchall()
+        else:
+            rows = self._conn.execute(
+                "SELECT * FROM spools ORDER BY id"
+            ).fetchall()
+        return [dict(r) for r in rows]
+
+    def use_filament(self, spool_id: int, grams: float) -> dict[str, Any]:
+        spool = self.get_spool(spool_id)
+        if spool is None:
+            return {"error": f"Spool {spool_id} not found"}
+
+        remaining = spool["weight_remaining_g"]
+        if grams > remaining:
+            new_remaining = 0.0
+            self._conn.execute(
+                "UPDATE spools SET weight_remaining_g = ? WHERE id = ?",
+                (new_remaining, spool_id),
+            )
+            self._conn.commit()
+            updated = self.get_spool(spool_id)
+            updated["warning"] = (
+                f"Requested {grams}g but only {remaining}g remained. Spool is now empty."
+            )
+            return updated
+
+        new_remaining = remaining - grams
+        self._conn.execute(
+            "UPDATE spools SET weight_remaining_g = ? WHERE id = ?",
+            (new_remaining, spool_id),
+        )
+        self._conn.commit()
+        return self.get_spool(spool_id)
+
+    def get_spool(self, spool_id: int) -> dict[str, Any] | None:
+        row = self._conn.execute(
+            "SELECT * FROM spools WHERE id = ?", (spool_id,)
+        ).fetchone()
+        if row is None:
+            return None
+        return dict(row)
 
     def close(self):
         self._conn.close()
