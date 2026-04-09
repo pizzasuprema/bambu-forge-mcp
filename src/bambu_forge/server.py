@@ -23,6 +23,7 @@ mcp = FastMCP(
 _config: BambuForgeConfig | None = None
 _registry: PrinterRegistry | None = None
 _mqtt_client: BambuMqttClient | None = None
+_watchdog = None
 
 
 def get_config() -> BambuForgeConfig:
@@ -33,7 +34,7 @@ def get_config() -> BambuForgeConfig:
 
 
 def get_mqtt_client() -> BambuMqttClient:
-    global _mqtt_client
+    global _mqtt_client, _watchdog
     if _mqtt_client is None:
         cfg = get_config()
         _mqtt_client = BambuMqttClient(
@@ -43,6 +44,9 @@ def get_mqtt_client() -> BambuMqttClient:
             mock=cfg.mock_mode,
         )
         _mqtt_client.connect()
+        from bambu_forge.printer.watchdog import HeaterWatchdog
+
+        _watchdog = HeaterWatchdog(mqtt_client=_mqtt_client)
     return _mqtt_client
 
 
