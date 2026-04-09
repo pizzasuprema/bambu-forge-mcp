@@ -30,6 +30,7 @@ class BambuForgeConfig:
     workspace_models_dir: str = _DEFAULT_MODELS
     workspace_exports_dir: str = _DEFAULT_EXPORTS
     db_path: str = str(_DEFAULT_BASE / "profiles.db")
+    design_db_path: str = str(_DEFAULT_BASE / "designs.db")
     electricity_rate_kwh: float = 0.12
     printer_hourly_rate: float = 0.00
     mock_mode: bool = False
@@ -57,6 +58,7 @@ def load_config(config_path: Path | None = None) -> BambuForgeConfig:
         workspace_models_dir=workspace.get("models_dir", _DEFAULT_MODELS),
         workspace_exports_dir=workspace.get("exports_dir", _DEFAULT_EXPORTS),
         db_path=workspace.get("db_path", str(_DEFAULT_BASE / "profiles.db")),
+        design_db_path=workspace.get("design_db_path", str(_DEFAULT_BASE / "designs.db")),
         electricity_rate_kwh=cost.get("electricity_rate_kwh", 0.12),
         printer_hourly_rate=cost.get("printer_hourly_rate", 0.00),
         mock_mode=os.environ.get("BAMBU_FORGE_MOCK", "").lower() == "true",

@@ -73,18 +73,19 @@ class DesignDnaStore:
             return None
         return self._row_to_dict(row)
 
-    def list_designs(self, query: str | None = None) -> list[dict[str, Any]]:
+    def list_designs(self, query: str | None = None, limit: int = 50) -> list[dict[str, Any]]:
         if query:
             like = f"%{query}%"
             rows = self._conn.execute(
                 """SELECT * FROM designs
                    WHERE name LIKE ? OR source_code LIKE ?
-                   ORDER BY created_at DESC""",
-                (like, like),
+                   ORDER BY created_at DESC LIMIT ?""",
+                (like, like, limit),
             ).fetchall()
         else:
             rows = self._conn.execute(
-                "SELECT * FROM designs ORDER BY created_at DESC"
+                "SELECT * FROM designs ORDER BY created_at DESC LIMIT ?",
+                (limit,),
             ).fetchall()
         return [self._row_to_dict(r) for r in rows]
 

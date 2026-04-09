@@ -62,7 +62,7 @@ async def generate_model_impl(
 
 async def list_designs_impl(
     query: str | None = None,
-    db_path: str = "design_dna.db",
+    db_path: str = str(Path.home() / ".bambu-forge" / "designs.db"),
 ) -> dict[str, Any]:
     store = DesignDnaStore(db_path=db_path)
     try:
@@ -81,7 +81,7 @@ def register_model_tools(mcp, get_config):
         """Generate a 3D model from CadQuery code and save to the Design DNA store."""
         cfg = get_config()
         workspace = cfg.workspace_models_dir
-        db_path = cfg.db_path
+        db_path = cfg.design_db_path
         return await generate_model_impl(
             code=code,
             output_name=output_name,
@@ -93,5 +93,5 @@ def register_model_tools(mcp, get_config):
     async def list_designs(query: str | None = None) -> dict[str, Any]:
         """List saved designs from the Design DNA store, optionally filtered by search query."""
         cfg = get_config()
-        db_path = cfg.db_path
+        db_path = cfg.design_db_path
         return await list_designs_impl(query=query, db_path=db_path)

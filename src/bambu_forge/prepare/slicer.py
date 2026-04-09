@@ -30,10 +30,13 @@ def build_slice_command(
     return cmd
 
 
-def mock_slice_result(input_file: str) -> dict[str, Any]:
+def mock_slice_result(input_file: str, output_file: str | None = None) -> dict[str, Any]:
+    if output_file is None:
+        output_file = input_file.replace(".stl", "_sliced.3mf").replace(".3mf", "_sliced.3mf")
     return {
         "success": True,
         "input_file": input_file,
+        "output_file": output_file,
         "print_time": 128,
         "filament_grams": 22.8,
         "layers": 187,
@@ -53,7 +56,7 @@ def run_slicer(
     timeout: int = 300,
 ) -> dict[str, Any]:
     if mock:
-        return mock_slice_result(input_file)
+        return mock_slice_result(input_file, output_file)
 
     if not Path(slicer_path).exists() and not shutil.which(slicer_path):
         return {
@@ -82,6 +85,7 @@ def run_slicer(
             timeout=timeout,
             capture_output=True,
             text=True,
+            stdin=subprocess.DEVNULL,
         )
         if result.returncode != 0:
             error = result.stderr.strip() or result.stdout.strip() or "Slicer failed"
