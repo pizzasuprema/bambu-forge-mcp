@@ -6,16 +6,33 @@ All-in-one MCP (Model Context Protocol) server for Bambu Lab 3D printers. Covers
 
 **Supported printers:** P1P, P1S, X1, X1C, X1E, A1 Mini, A1, P2S, H2S, H2D, H2C, H2D Pro, H2D Laser Edition.
 
+## Platform Support
+
+| Platform | Status | Notes |
+|----------|--------|-------|
+| macOS | Full support | Design iteration auto-replaces the Bambu Studio plate |
+| Windows | Supported | Auto-opens models in Bambu Studio |
+| Linux | Supported | Auto-opens models via `xdg-open` |
+
+The core server (model generation, printer control, profiles, safety) is fully cross-platform. The only macOS-specific feature is the "quit and reopen" behavior that gives you a clean plate on each design iteration. On Windows and Linux, generated models open in Bambu Studio but are added to the current plate.
+
+---
+
 ## Quick Start
 
 ### 1. Install
 
 ```bash
+git clone https://github.com/pizzasuprema/bambu-forge-mcp.git
 cd bambu-forge-mcp
 uv sync
 ```
 
-### 2. Add to Cursor
+### 2. Connect to your AI coding agent
+
+Replace `/path/to/bambu-forge-mcp` with the actual path where you cloned the repo. All platforms use the same env vars for printer configuration.
+
+#### Cursor
 
 Add to `~/.cursor/mcp.json`:
 
@@ -37,9 +54,53 @@ Add to `~/.cursor/mcp.json`:
 }
 ```
 
+#### Claude Code
+
+```bash
+claude mcp add bambu-forge \
+  -e BAMBU_PRINTER_IP=192.168.1.100 \
+  -e BAMBU_ACCESS_CODE=12345678 \
+  -e BAMBU_SERIAL_NUMBER=YOUR_SERIAL \
+  -e BAMBU_PRINTER_MODEL=H2C \
+  -- uv run --project /path/to/bambu-forge-mcp bambu-forge-mcp
+```
+
+#### Claude Desktop
+
+Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS, `%APPDATA%\Claude\claude_desktop_config.json` on Windows):
+
+```json
+{
+  "mcpServers": {
+    "bambu-forge": {
+      "command": "uv",
+      "args": ["run", "--project", "/path/to/bambu-forge-mcp", "bambu-forge-mcp"],
+      "env": {
+        "BAMBU_PRINTER_IP": "192.168.1.100",
+        "BAMBU_ACCESS_CODE": "12345678",
+        "BAMBU_SERIAL_NUMBER": "YOUR_SERIAL",
+        "BAMBU_PRINTER_MODEL": "H2C"
+      }
+    }
+  }
+}
+```
+
+#### Any MCP-compatible client
+
+The server uses stdio transport. Run it with:
+
+```bash
+BAMBU_PRINTER_IP=192.168.1.100 \
+BAMBU_ACCESS_CODE=12345678 \
+BAMBU_SERIAL_NUMBER=YOUR_SERIAL \
+BAMBU_PRINTER_MODEL=H2C \
+uv run --project /path/to/bambu-forge-mcp bambu-forge-mcp
+```
+
 ### 3. Try Mock Mode (no printer needed)
 
-Set `"BAMBU_FORGE_MOCK": "true"` in the env block to test without a real printer.
+Set `"BAMBU_FORGE_MOCK": "true"` in the env block to test without a real printer. Works with all clients above.
 
 ---
 
@@ -264,7 +325,7 @@ uv run pytest tests/ -v
 BAMBU_FORGE_MOCK=true BAMBU_PRINTER_MODEL=H2C uv run bambu-forge-mcp
 ```
 
-120 tests covering all tools, safety validation, MQTT protocol, profile inheritance, and Design DNA lineage.
+124 tests covering all tools, safety validation, MQTT protocol, profile inheritance, and Design DNA lineage.
 
 ---
 
