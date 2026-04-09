@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
+
+import socket
 
 from fastmcp import FastMCP
 
-from bambu_forge.config import BambuForgeConfig, load_config
+from bambu_forge.config import BambuForgeConfig, load_config, save_printer_config
 from bambu_forge.printer_registry import PrinterRegistry
 from bambu_forge.printer.tools import register_printer_tools
 from bambu_forge.profiles.tools import register_profile_tools
@@ -68,6 +71,68 @@ register_printer_tools(mcp, get_config, get_registry)
 register_profile_tools(mcp, get_config)
 register_model_tools(mcp, get_config)
 register_prepare_tools(mcp, get_config)
+
+
+@mcp.tool()
+async def discover_printers(mock: bool = False, timeout: int = 5) -> dict[str, Any]:
+    """Discover Bambu printers on the LAN via SSDP, or return mock printers when ``mock`` is true."""
+    from bambu_forge.printer.discovery import discover_printers as discover_printers_impl
+
+    printers = discover_printers_impl(mock=mock, timeout=float(timeout))
+    return {"status": "success", "printers": printers, "count": len(printers)}
+
+
+@mcp.tool()
+async def setup_printer(printer_ip: str) -> dict[str, Any]:
+    """Discover or verify a printer at ``printer_ip`` and persist IP, serial, and model to config."""
+    from bambu_forge.printer.discovery import discover_printers as discover_printers_impl
+
+    cfg = get_config()
+    config_path = Path.home() / ".bambu-forge" / "config.json"
+    printers = discover_printers_impl(mock=cfg.mock_mode, timeout=5.0)
+
+    entry = next((p for p in printers if p.get("ip") == printer_ip), None)
+    if entry is None and cfg.mock_mode and printers:
+        entry = {**printers[0], "ip": printer_ip}
+
+    if entry is None:
+        try:
+            with socket.create_connection((printer_ip, 8883), timeout=3.0):
+                pass
+        except OSError:
+            return {
+                "status": "error",
+                "error_code": "PRINTER_NOT_FOUND",
+                "message": f"No SSDP match for {printer_ip} and MQTT port unreachable",
+            }
+        entry = {
+            "ip": printer_ip,
+            "serial": "UNKNOWN",
+            "model": "UNKNOWN",
+            "name": "",
+            "firmware": "",
+            "signal": "",
+        }
+
+    save_printer_config(
+        config_path,
+        entry["ip"],
+        entry["serial"],
+        entry["model"],
+    )
+    global _config
+    _config = None
+
+    return {
+        "status": "success",
+        "message": "Printer configuration saved",
+        "printer_ip": entry["ip"],
+        "serial": entry["serial"],
+        "model": entry["model"],
+        "name": entry.get("name", ""),
+        "firmware": entry.get("firmware", ""),
+        "signal": entry.get("signal", ""),
+    }
 
 
 def main():
