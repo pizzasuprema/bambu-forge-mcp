@@ -1,0 +1,162 @@
+{
+  "model_id_map": {
+    "O1C2": "H2C",
+    "C11": "P1P",
+    "C12": "P1S",
+    "N1": "X1",
+    "N2S": "X1C",
+    "N3S": "X1E",
+    "N4S": "A1M",
+    "N5S": "A1",
+    "O1D1": "H2D",
+    "O1D2": "H2D_Pro",
+    "O1D3": "H2D_Laser",
+    "O1S1": "H2S",
+    "P2S1": "P2S"
+  },
+  "printers": {
+    "P1P": {
+      "display_name": "Bambu Lab P1P",
+      "nozzle_temp_max": 300,
+      "bed_temp_max": 100,
+      "chamber_temp_max": null,
+      "enclosed": false,
+      "modes": ["fdm"],
+      "ams_type": "AMS",
+      "build_volume": [256, 256, 256],
+      "dual_nozzle": false
+    },
+    "P1S": {
+      "display_name": "Bambu Lab P1S",
+      "nozzle_temp_max": 300,
+      "bed_temp_max": 100,
+      "chamber_temp_max": null,
+      "enclosed": true,
+      "modes": ["fdm"],
+      "ams_type": "AMS",
+      "build_volume": [256, 256, 256],
+      "dual_nozzle": false
+    },
+    "X1": {
+      "display_name": "Bambu Lab X1",
+      "nozzle_temp_max": 300,
+      "bed_temp_max": 120,
+      "chamber_temp_max": 60,
+      "enclosed": true,
+      "modes": ["fdm"],
+      "ams_type": "AMS",
+      "build_volume": [256, 256, 256],
+      "dual_nozzle": false
+    },
+    "X1C": {
+      "display_name": "Bambu Lab X1 Carbon",
+      "nozzle_temp_max": 300,
+      "bed_temp_max": 120,
+      "chamber_temp_max": 60,
+      "enclosed": true,
+      "modes": ["fdm"],
+      "ams_type": "AMS",
+      "build_volume": [256, 256, 256],
+      "dual_nozzle": false
+    },
+    "X1E": {
+      "display_name": "Bambu Lab X1E",
+      "nozzle_temp_max": 350,
+      "bed_temp_max": 120,
+      "chamber_temp_max": 60,
+      "enclosed": true,
+      "modes": ["fdm"],
+      "ams_type": "AMS_HT",
+      "build_volume": [256, 256, 256],
+      "dual_nozzle": false
+    },
+    "A1M": {
+      "display_name": "Bambu Lab A1 mini",
+      "nozzle_temp_max": 300,
+      "bed_temp_max": 100,
+      "chamber_temp_max": null,
+      "enclosed": false,
+      "modes": ["fdm"],
+      "ams_type": "AMS_lite",
+      "build_volume": [180, 180, 180],
+      "dual_nozzle": false
+    },
+    "A1": {
+      "display_name": "Bambu Lab A1",
+      "nozzle_temp_max": 300,
+      "bed_temp_max": 100,
+      "chamber_temp_max": null,
+      "enclosed": false,
+      "modes": ["fdm"],
+      "ams_type": "AMS_lite",
+      "build_volume": [256, 256, 256],
+      "dual_nozzle": false
+    },
+    "P2S": {
+      "display_name": "Bambu Lab P2S",
+      "nozzle_temp_max": 300,
+      "bed_temp_max": 100,
+      "chamber_temp_max": null,
+      "enclosed": true,
+      "modes": ["fdm"],
+      "ams_type": "AMS_2",
+      "build_volume": [256, 256, 256],
+      "dual_nozzle": false
+    },
+    "H2S": {
+      "display_name": "Bambu Lab H2S",
+      "nozzle_temp_max": 350,
+      "bed_temp_max": 120,
+      "chamber_temp_max": 65,
+      "enclosed": true,
+      "modes": ["fdm"],
+      "ams_type": "AMS_HT",
+      "build_volume": [320, 320, 320],
+      "dual_nozzle": false
+    },
+    "H2D": {
+      "display_name": "Bambu Lab H2D",
+      "nozzle_temp_max": 350,
+      "bed_temp_max": 120,
+      "chamber_temp_max": 65,
+      "enclosed": true,
+      "modes": ["fdm"],
+      "ams_type": "AMS_HT",
+      "build_volume": [320, 320, 320],
+      "dual_nozzle": true
+    },
+    "H2C": {
+      "display_name": "Bambu Lab H2C",
+      "nozzle_temp_max": 350,
+      "bed_temp_max": 120,
+      "chamber_temp_max": 65,
+      "enclosed": true,
+      "modes": ["fdm"],
+      "ams_type": "AMS_HT",
+      "build_volume": [320, 320, 320],
+      "dual_nozzle": true
+    },
+    "H2D_Pro": {
+      "display_name": "Bambu Lab H2D Pro",
+      "nozzle_temp_max": 350,
+      "bed_temp_max": 120,
+      "chamber_temp_max": 65,
+      "enclosed": true,
+      "modes": ["fdm"],
+      "ams_type": "AMS_HT",
+      "build_volume": [320, 320, 320],
+      "dual_nozzle": true
+    },
+    "H2D_Laser": {
+      "display_name": "Bambu Lab H2D Laser",
+      "nozzle_temp_max": 350,
+      "bed_temp_max": 120,
+      "chamber_temp_max": 65,
+      "enclosed": true,
+      "modes": ["fdm", "laser"],
+      "ams_type": "AMS_HT",
+      "build_volume": [320, 320, 320],
+      "dual_nozzle": true
+    }
+  }
+}
