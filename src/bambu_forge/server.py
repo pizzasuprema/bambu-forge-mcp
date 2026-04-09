@@ -9,6 +9,7 @@ from bambu_forge.printer_registry import PrinterRegistry
 from bambu_forge.printer.tools import register_printer_tools
 from bambu_forge.profiles.tools import register_profile_tools
 from bambu_forge.model.tools import register_model_tools
+from bambu_forge.prepare.tools import register_prepare_tools
 
 mcp = FastMCP(
     "bambu-forge",
@@ -66,6 +67,7 @@ async def ping() -> dict:
 register_printer_tools(mcp, get_config, get_registry)
 register_profile_tools(mcp, get_config)
 register_model_tools(mcp, get_config)
+register_prepare_tools(mcp, get_config)
 
 
 def main():

@@ -1,0 +1,35 @@
+"""MCP tools for model slicing."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from bambu_forge.prepare.slicer import run_slicer
+
+
+def register_prepare_tools(mcp, get_config):
+    @mcp.tool()
+    async def slice_model(
+        input_file: str,
+        output_file: str,
+        machine_settings: str | None = None,
+        process_settings: str | None = None,
+        filament_settings: str | None = None,
+        plate_index: int = 0,
+    ) -> dict[str, Any]:
+        """Slice a 3D model (STL) into a print-ready 3MF using Bambu Studio CLI."""
+        cfg = get_config()
+        slicer_path = cfg.bambu_studio_path or ""
+        mock = cfg.mock_mode
+
+        result = run_slicer(
+            slicer_path=slicer_path,
+            input_file=input_file,
+            output_file=output_file,
+            machine_settings=machine_settings,
+            process_settings=process_settings,
+            filament_settings=filament_settings,
+            plate_index=plate_index,
+            mock=mock,
+        )
+        return result
