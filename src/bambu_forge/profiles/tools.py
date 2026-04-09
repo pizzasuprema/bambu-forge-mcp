@@ -8,9 +8,13 @@ from bambu_forge.profiles.store import ProfileStore
 
 def _default_db_path(get_config) -> Path:
     cfg = get_config()
-    data_dir = Path(cfg.data_dir) if hasattr(cfg, "data_dir") and cfg.data_dir else Path.home() / ".bambu-forge"
-    data_dir.mkdir(parents=True, exist_ok=True)
-    return data_dir / "profiles.db"
+    if cfg.db_path:
+        p = Path(cfg.db_path)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        return p
+    default = Path.home() / ".bambu-forge" / "profiles.db"
+    default.parent.mkdir(parents=True, exist_ok=True)
+    return default
 
 
 async def save_profile_impl(
@@ -173,9 +177,14 @@ async def recommend_profile_impl(
 
 def _default_history_db_path(get_config) -> Path:
     cfg = get_config()
-    data_dir = Path(cfg.data_dir) if hasattr(cfg, "data_dir") and cfg.data_dir else Path.home() / ".bambu-forge"
-    data_dir.mkdir(parents=True, exist_ok=True)
-    return data_dir / "history.db"
+    if cfg.db_path:
+        base = Path(cfg.db_path).parent
+        p = base / "history.db"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        return p
+    default = Path.home() / ".bambu-forge" / "history.db"
+    default.parent.mkdir(parents=True, exist_ok=True)
+    return default
 
 
 _VALID_OUTCOMES = {"success", "failure", "cancelled", "in_progress"}

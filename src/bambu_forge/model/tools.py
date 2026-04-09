@@ -30,7 +30,10 @@ async def generate_model_impl(
 
     if not output_name.endswith(".stl"):
         output_name += ".stl"
-    output_path = str(ws / output_name)
+    output_path = (ws / output_name).resolve()
+    if not str(output_path).startswith(str(ws.resolve())):
+        return {"status": "error", "error_code": "INVALID_PATH", "message": "output_name must not escape workspace directory"}
+    output_path = str(output_path)
 
     result = execute_cadquery(code, output_path, workspace, timeout=timeout)
     if not result["success"]:
@@ -170,6 +173,13 @@ def register_model_tools(mcp, get_config):
         output_format: str = "svg",
     ) -> dict[str, Any]:
         """Generate a 2D pattern (SVG or DXF) from user code for laser cutting."""
+        _valid_formats = {"svg", "dxf"}
+        if output_format not in _valid_formats:
+            return {
+                "status": "error",
+                "error_code": "INVALID_FORMAT",
+                "message": f"output_format must be one of {sorted(_valid_formats)}, got: {output_format!r}",
+            }
         from bambu_forge.model.pattern_2d import generate_2d_pattern
 
         cfg = get_config()
