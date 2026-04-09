@@ -17,13 +17,20 @@ def estimate_cost(
     material_density: float = 1.24,
 ) -> dict[str, Any]:
     if sliced_data is not None:
-        weight_g = float(sliced_data["filament_grams"])
-        print_time_min = int(sliced_data["print_time"])
+        weight_g = float(sliced_data.get("filament_grams", 0))
+        print_time_min = int(sliced_data.get("print_time", 0))
         is_estimate = False
     elif mesh_path is not None:
-        weight_g, print_time_min = _estimate_from_mesh(
-            mesh_path, infill_percent, material_density
-        )
+        try:
+            weight_g, print_time_min = _estimate_from_mesh(
+                mesh_path, infill_percent, material_density
+            )
+        except Exception as exc:
+            return {
+                "status": "error",
+                "error_code": "MESH_LOAD_FAILED",
+                "message": f"Failed to load mesh '{mesh_path}': {exc}",
+            }
         is_estimate = True
     else:
         return {"status": "error", "message": "Provide either mesh_path or sliced_data"}

@@ -51,3 +51,12 @@ def test_cost_math():
     expected_power = 1.0 * 0.2 * 0.12  # 1 hour * 0.2kW * $0.12/kWh
     assert abs(data["power_cost"] - expected_power) < 0.01
     assert abs(data["total_cost"] - (2.50 + expected_power)) < 0.01
+
+
+def test_estimate_missing_file():
+    """Nonexistent mesh path returns structured error, no crash."""
+    result = estimate_cost(mesh_path="/tmp/nonexistent_xyz_42.stl")
+
+    assert result["status"] == "error"
+    assert result["error_code"] == "MESH_LOAD_FAILED"
+    assert "nonexistent" in result["message"]

@@ -55,9 +55,17 @@ def register_prepare_tools(mcp, get_config):
         file_path: str, profile_name: str | None = None
     ) -> dict[str, Any]:
         """Estimate print cost (filament, power, time) from a 3D model or sliced output."""
+        cfg = get_config()
         from bambu_forge.prepare.cost_estimator import estimate_cost as _estimate
 
-        return _estimate(mesh_path=file_path)
+        result = _estimate(
+            mesh_path=file_path,
+            electricity_rate_kwh=cfg.electricity_rate_kwh,
+            printer_hourly_rate=cfg.printer_hourly_rate,
+        )
+        if profile_name is not None and result.get("status") == "success":
+            result["profile_name"] = profile_name
+        return result
 
     @mcp.tool()
     async def arrange_plate(
