@@ -30,6 +30,7 @@ packages = ["src/bambu_forge"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+asyncio_mode = "auto"
 
 [project.optional-dependencies]
 dev = ["pytest", "pytest-asyncio"]
