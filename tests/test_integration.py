@@ -30,6 +30,10 @@ async def test_all_tools_registered():
         "recommend_profile",
         "list_filaments",
         "import_studio_config",
+        # Learning — Phase 4
+        "log_print_outcome",
+        "list_print_history",
+        "get_print_insights",
         # Model — Phase 2
         "generate_model",
         "list_designs",
@@ -51,4 +55,4 @@ async def test_all_tools_registered():
     for name in expected:
         assert name in tool_names, f"Missing tool: {name}"
 
-    assert len(tool_names) == 32, f"Expected 32 tools, got {len(tool_names)}: {sorted(tool_names)}"
+    assert len(tool_names) == 35, f"Expected 35 tools, got {len(tool_names)}: {sorted(tool_names)}"
