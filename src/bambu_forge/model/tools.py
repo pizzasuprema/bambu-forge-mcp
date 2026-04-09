@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from json import JSONDecodeError
 from pathlib import Path
 from typing import Any
 
@@ -115,8 +116,10 @@ def register_model_tools(mcp, get_config):
         from bambu_forge.model.ai_generator import check_generation
 
         cfg = get_config()
+        ws = Path(cfg.workspace_models_dir)
+        ws.mkdir(parents=True, exist_ok=True)
         return await check_generation(
-            job_id=job_id, workspace=cfg.workspace_models_dir, mock=cfg.mock_mode
+            job_id=job_id, workspace=str(ws), mock=cfg.mock_mode
         )
 
     @mcp.tool(name="modify_model")
@@ -128,10 +131,17 @@ def register_model_tools(mcp, get_config):
         from bambu_forge.model.stl_ops import modify_model
 
         cfg = get_config()
-        ops = json.loads(operations)
-        output_path = str(
-            Path(cfg.workspace_models_dir) / Path(file_path).stem
-        ) + "_modified.stl"
+        try:
+            ops = json.loads(operations)
+        except JSONDecodeError as e:
+            return {
+                "status": "error",
+                "error_code": "INVALID_JSON",
+                "message": f"operations is not valid JSON: {e}",
+            }
+        ws = Path(cfg.workspace_models_dir)
+        ws.mkdir(parents=True, exist_ok=True)
+        output_path = str(ws / Path(file_path).stem) + "_modified.stl"
         return modify_model(file_path, ops, output_path)
 
     @mcp.tool(name="combine_models")
@@ -144,9 +154,9 @@ def register_model_tools(mcp, get_config):
         from bambu_forge.model.stl_ops import combine_models
 
         cfg = get_config()
-        output_path = str(
-            Path(cfg.workspace_models_dir) / "combined.stl"
-        )
+        ws = Path(cfg.workspace_models_dir)
+        ws.mkdir(parents=True, exist_ok=True)
+        output_path = str(ws / "combined.stl")
         return combine_models(file_a, file_b, operation, output_path)
 
     @mcp.tool(name="generate_2d_pattern")
