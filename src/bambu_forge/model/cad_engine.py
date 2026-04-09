@@ -14,13 +14,28 @@ _ALLOWED_ENV_KEYS = frozenset({
 })
 
 
+_AUTO_EXPORT = '''
+import pathlib as _pathlib
+if not _pathlib.Path(OUTPUT_PATH).exists():
+    import cadquery as _cq
+    for _name in ("result", "model", "part", "holder", "body"):
+        _obj = globals().get(_name)
+        if _obj is not None and hasattr(_obj, "val"):
+            _cq.exporters.export(_obj, OUTPUT_PATH)
+            break
+'''
+
+
 def execute_cadquery(
     code: str,
     output_path: str,
     workspace: str,
     timeout: int = 60,
 ) -> dict:
-    full_code = f'import os\nOUTPUT_PATH = os.environ["OUTPUT_PATH"]\n{code}'
+    full_code = (
+        f'import os\nOUTPUT_PATH = os.environ["OUTPUT_PATH"]\n'
+        f'{code}\n{_AUTO_EXPORT}'
+    )
 
     env = {k: v for k, v in os.environ.items() if k in _ALLOWED_ENV_KEYS}
     env["OUTPUT_PATH"] = output_path

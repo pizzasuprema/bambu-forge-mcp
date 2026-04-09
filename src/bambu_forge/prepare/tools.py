@@ -35,12 +35,12 @@ def register_prepare_tools(mcp, get_config, get_registry=None):
         return result
 
     @mcp.tool()
-    async def analyze_printability(file_path: str) -> dict[str, Any]:
+    async def analyze_printability(file_path: str, printer_model: str | None = None) -> dict[str, Any]:
         """Analyze a 3D model for printability issues (overhangs, thin walls, bridging, adhesion, supports, warping, thermal stress)."""
         cfg = get_config()
         from bambu_forge.prepare.analyzer import analyze_printability as _analyze
 
-        return _analyze(file_path, printer_model=cfg.printer_model)
+        return _analyze(file_path, printer_model=printer_model or cfg.printer_model)
 
     @mcp.tool()
     async def optimize_settings(file_path: str, priorities: str) -> dict[str, Any]:
@@ -52,7 +52,10 @@ def register_prepare_tools(mcp, get_config, get_registry=None):
 
     @mcp.tool()
     async def estimate_cost(
-        file_path: str, profile_name: str | None = None
+        file_path: str,
+        profile_name: str | None = None,
+        infill_percent: int = 15,
+        filament_price_per_kg: float = 25.0,
     ) -> dict[str, Any]:
         """Estimate print cost (filament, power, time) from a 3D model or sliced output."""
         cfg = get_config()
@@ -60,6 +63,8 @@ def register_prepare_tools(mcp, get_config, get_registry=None):
 
         result = _estimate(
             mesh_path=file_path,
+            infill_percent=infill_percent,
+            filament_price_per_kg=filament_price_per_kg,
             electricity_rate_kwh=cfg.electricity_rate_kwh,
             printer_hourly_rate=cfg.printer_hourly_rate,
         )

@@ -28,6 +28,28 @@ async def test_generate_model_creates_file(tmp_path):
     assert "design_id" in result
 
 
+CADQUERY_NO_OUTPUT = """\
+x = 42
+"""
+
+
+@pytest.mark.asyncio
+async def test_generate_model_error_on_empty_mesh(tmp_path):
+    """Code that produces no mesh should return EMPTY_MESH error, not success."""
+    db = tmp_path / "dna.db"
+    result = await generate_model_impl(
+        code=CADQUERY_NO_OUTPUT,
+        output_name="empty",
+        workspace=str(tmp_path),
+        db_path=str(db),
+        timeout=30,
+    )
+
+    assert result["status"] == "error"
+    assert result["error_code"] == "EMPTY_MESH"
+    assert "OUTPUT_PATH" in result["message"]
+
+
 @pytest.mark.asyncio
 async def test_list_designs_empty(tmp_path):
     db = tmp_path / "dna.db"

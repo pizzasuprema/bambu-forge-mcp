@@ -64,7 +64,15 @@ async def printer_status_impl(
 
     raw = mqtt_client.get_cached_status()
     if raw is None:
-        return {"status": "error", "error_code": "NO_STATUS", "message": "No cached status available"}
+        return {
+            "status": "error",
+            "error_code": "NO_STATUS",
+            "message": (
+                "No cached status available. The MQTT connection may not be "
+                "established yet -- verify BAMBU_PRINTER_IP and BAMBU_ACCESS_CODE "
+                "are correct and the printer is powered on and on the same network."
+            ),
+        }
 
     parsed = parse_status(raw)
     return {"status": "success", "data": parsed}

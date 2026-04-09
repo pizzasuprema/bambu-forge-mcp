@@ -41,6 +41,17 @@ async def generate_model_impl(
 
     validation = validate_mesh(output_path)
 
+    if not validation.valid or validation.triangle_count == 0:
+        return {
+            "status": "error",
+            "error_code": "EMPTY_MESH",
+            "message": (
+                "CadQuery ran without errors but produced an invalid mesh: "
+                f"{'; '.join(validation.errors) or 'mesh has 0 triangles'}. "
+                "Ensure your code calls cq.exporters.export(result, OUTPUT_PATH)."
+            ),
+        }
+
     store = DesignDnaStore(db_path=db_path)
     try:
         bbox = list(validation.bounding_box) if validation.bounding_box else []
@@ -98,12 +109,20 @@ def register_model_tools(mcp, get_config):
             workspace=workspace,
             db_path=db_path,
         )
-        if result.get("status") == "success" and open_in_bambu_studio:
-            import subprocess, sys
+        if result.get("status") == "success" and result.get("valid") and open_in_bambu_studio:
+            import subprocess, sys, time
             mesh_path = result.get("mesh_path", "")
             if mesh_path:
                 try:
                     if sys.platform == "darwin":
+                        subprocess.Popen(
+                            ["osascript", "-e", 'tell application "BambuStudio" to quit'],
+                        )
+                        while subprocess.run(
+                            ["pgrep", "-x", "BambuStudio"],
+                            capture_output=True,
+                        ).returncode == 0:
+                            time.sleep(0.5)
                         subprocess.Popen(["open", "-a", "BambuStudio", mesh_path])
                     elif sys.platform == "win32":
                         subprocess.Popen(["start", "", mesh_path], shell=True)

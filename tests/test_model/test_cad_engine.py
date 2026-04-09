@@ -41,6 +41,33 @@ def test_execute_syntax_error(tmp_path):
     assert result["error"]
 
 
+CADQUERY_NO_EXPORT = """\
+import cadquery as cq
+
+result = cq.Workplane("XY").box(10, 20, 5)
+"""
+
+
+def test_auto_export_fires_when_result_assigned(tmp_path):
+    """Code assigns `result` but never calls export(); auto-export should write the file."""
+    output = tmp_path / "auto.stl"
+    result = execute_cadquery(CADQUERY_NO_EXPORT, str(output), str(tmp_path), timeout=120)
+
+    assert result["success"] is True
+    assert output.exists()
+    assert output.stat().st_size > 0
+
+
+def test_auto_export_skips_when_already_exported(tmp_path):
+    """If user code already exports, auto-export should not interfere."""
+    output = tmp_path / "manual.stl"
+    result = execute_cadquery(CADQUERY_BOX, str(output), str(tmp_path), timeout=120)
+
+    assert result["success"] is True
+    assert output.exists()
+    assert output.stat().st_size > 0
+
+
 def test_env_stripping(tmp_path, monkeypatch):
     monkeypatch.setenv("BAMBU_ACCESS_CODE", "supersecret")
     monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "alsosecret")

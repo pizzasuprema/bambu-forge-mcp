@@ -11,6 +11,23 @@ async def test_printer_status_mock():
 
 
 @pytest.mark.asyncio
+async def test_printer_status_no_cache_has_troubleshooting():
+    """NO_STATUS error should include troubleshooting guidance, not just 'No cached status'."""
+    from bambu_forge.printer.tools import printer_status_impl
+    from bambu_forge.printer.mqtt_client import BambuMqttClient
+
+    client = BambuMqttClient(host="127.0.0.1", access_code="test", serial="TEST", mock=True)
+    client._cached_status = None
+    result = await printer_status_impl(mock=False, mqtt_client=client)
+
+    assert result["status"] == "error"
+    assert result["error_code"] == "NO_STATUS"
+    assert "BAMBU_PRINTER_IP" in result["message"]
+    assert "BAMBU_ACCESS_CODE" in result["message"]
+    assert "powered on" in result["message"]
+
+
+@pytest.mark.asyncio
 async def test_send_gcode_blocked():
     from bambu_forge.printer.tools import send_gcode_impl
 
