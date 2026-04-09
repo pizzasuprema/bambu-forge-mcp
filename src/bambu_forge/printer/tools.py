@@ -221,13 +221,13 @@ async def manage_printer_impl(
 async def calibrate_impl(
     calibration_type: str,
 ) -> dict[str, Any]:
-    return {"status": "success", "message": "Calibration command sent (Phase 3)"}
+    return {"status": "error", "error_code": "NOT_IMPLEMENTED", "message": "Calibration not yet implemented (Phase 3)"}
 
 
 async def camera_snapshot_impl(
     camera: str = "liveview",
 ) -> dict[str, Any]:
-    return {"status": "success", "message": "Camera snapshot not yet implemented (Phase 3)"}
+    return {"status": "error", "error_code": "NOT_IMPLEMENTED", "message": "Camera snapshot not yet implemented (Phase 3)"}
 
 
 def register_printer_tools(mcp, get_config, get_registry, get_mqtt_client=None):

@@ -56,7 +56,15 @@ def run_slicer(
         return mock_slice_result(input_file)
 
     if not Path(slicer_path).exists() and not shutil.which(slicer_path):
-        return {"success": False, "error": f"Slicer not found: {slicer_path}"}
+        return {
+            "success": False,
+            "input_file": input_file,
+            "print_time": 0,
+            "filament_grams": 0,
+            "layers": 0,
+            "error": f"Slicer not found: {slicer_path}",
+            "output_file": output_file,
+        }
 
     cmd = build_slice_command(
         slicer_path=slicer_path,
@@ -77,14 +85,41 @@ def run_slicer(
         )
         if result.returncode != 0:
             error = result.stderr.strip() or result.stdout.strip() or "Slicer failed"
-            return {"success": False, "error": error}
+            return {
+                "success": False,
+                "input_file": input_file,
+                "print_time": 0,
+                "filament_grams": 0,
+                "layers": 0,
+                "error": error,
+                "output_file": output_file,
+            }
         return {
             "success": True,
-            "output_file": output_file,
-            "stdout": result.stdout,
+            "input_file": input_file,
+            "print_time": 0,
+            "filament_grams": 0,
+            "layers": 0,
             "error": "",
+            "output_file": output_file,
         }
     except subprocess.TimeoutExpired:
-        return {"success": False, "error": f"Slicer timeout: exceeded {timeout}s"}
+        return {
+            "success": False,
+            "input_file": input_file,
+            "print_time": 0,
+            "filament_grams": 0,
+            "layers": 0,
+            "error": f"Slicer timeout: exceeded {timeout}s",
+            "output_file": output_file,
+        }
     except Exception as exc:
-        return {"success": False, "error": str(exc)}
+        return {
+            "success": False,
+            "input_file": input_file,
+            "print_time": 0,
+            "filament_grams": 0,
+            "layers": 0,
+            "error": str(exc),
+            "output_file": output_file,
+        }

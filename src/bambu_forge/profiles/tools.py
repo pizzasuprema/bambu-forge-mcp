@@ -127,7 +127,14 @@ def register_profile_tools(mcp, get_config):
         """Save a print profile. Overrides is a JSON string of settings that differ from the base profile."""
         import json
 
-        parsed = json.loads(overrides)
+        try:
+            parsed = json.loads(overrides)
+        except (json.JSONDecodeError, TypeError):
+            return {
+                "status": "error",
+                "error_code": "INVALID_JSON",
+                "message": f"overrides is not valid JSON: {overrides!r}",
+            }
         db = _default_db_path(get_config)
         return await save_profile_impl(
             name=name, base_profile=base_profile, overrides=parsed,
