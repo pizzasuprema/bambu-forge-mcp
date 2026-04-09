@@ -156,6 +156,14 @@ class PrintHistoryStore:
             "success_rate": round(successes / total, 4) if total else 0.0,
         }
 
+    def get_all_profile_success_rates(self) -> dict[str, float]:
+        rows = self._conn.execute(
+            "SELECT profile_name, COUNT(*) as total, "
+            "SUM(CASE WHEN outcome='success' THEN 1 ELSE 0 END) as successes "
+            "FROM print_history WHERE profile_name != '' GROUP BY profile_name"
+        ).fetchall()
+        return {r["profile_name"]: round(r["successes"] / r["total"], 4) for r in rows if r["total"] > 0}
+
     def close(self):
         self._conn.close()
 

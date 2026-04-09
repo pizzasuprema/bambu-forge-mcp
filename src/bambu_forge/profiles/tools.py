@@ -113,10 +113,7 @@ async def recommend_profile_impl(
 
         h = PrintHistoryStore(db_path=history_db_path)
         try:
-            for name in _get_profile_names_with_history(h):
-                rate_info = h.get_profile_success_rate(name)
-                if rate_info["total_prints"] > 0:
-                    history_rates[name] = rate_info["success_rate"]
+            history_rates = h.get_all_profile_success_rates()
         finally:
             h.close()
 
@@ -149,7 +146,7 @@ async def recommend_profile_impl(
                 best_match = p
 
         if best_match and best_score > 0:
-            normalized_score = round(best_score / max_possible, 4) if max_possible else 0.0
+            normalized_score = min(1.0, round(best_score / max_possible, 4)) if max_possible else 0.0
             return {
                 "status": "success",
                 "recommendation_type": "profile",
@@ -172,13 +169,6 @@ async def recommend_profile_impl(
         }
     finally:
         store.close()
-
-
-def _get_profile_names_with_history(history_store) -> list[str]:
-    rows = history_store._conn.execute(
-        "SELECT DISTINCT profile_name FROM print_history WHERE profile_name != ''"
-    ).fetchall()
-    return [r["profile_name"] for r in rows]
 
 
 def _default_history_db_path(get_config) -> Path:
