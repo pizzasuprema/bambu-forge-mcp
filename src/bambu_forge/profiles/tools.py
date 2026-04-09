@@ -16,10 +16,20 @@ def _default_db_path(get_config) -> Path:
 async def save_profile_impl(
     name: str,
     base_profile: str | None = None,
-    overrides: dict[str, Any] | None = None,
+    overrides: dict[str, Any] | str | None = None,
     profile_type: str = "process",
     db_path: str | Path | None = None,
 ) -> dict[str, Any]:
+    import json
+    if isinstance(overrides, str):
+        try:
+            overrides = json.loads(overrides)
+        except (json.JSONDecodeError, TypeError):
+            return {
+                "status": "error",
+                "error_code": "INVALID_JSON",
+                "message": f"overrides is not valid JSON: {overrides!r}",
+            }
     store = ProfileStore(db_path=db_path or "profiles.db")
     try:
         store.save_profile(name, base_profile, overrides, profile_type)

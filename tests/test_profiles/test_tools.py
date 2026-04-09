@@ -60,3 +60,17 @@ async def test_delete_profile(tmp_path):
     result = await delete_profile_impl(name="Doomed", db_path=db)
     assert result["status"] == "success"
     assert result["deleted"] is True
+
+
+@pytest.mark.asyncio
+async def test_save_profile_malformed_json(tmp_path):
+    db = str(tmp_path / "test.db")
+    result = await save_profile_impl(
+        name="Bad",
+        base_profile="base",
+        overrides="{invalid json",
+        profile_type="process",
+        db_path=db,
+    )
+    assert result["status"] == "error"
+    assert "INVALID" in result.get("error_code", "")

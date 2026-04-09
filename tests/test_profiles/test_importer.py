@@ -63,3 +63,13 @@ def test_resolve_inheritance_cycle_detection():
 
     with pytest.raises(ValueError, match="circular"):
         resolve_inheritance(a, bases)
+
+
+def test_resolve_inheritance_strips_underscore_keys():
+    profile = {"name": "Custom", "inherits": "Base", "speed": 200, "_source_path": "/some/path", "_profile_type": "process"}
+    base_profiles = {"Base": {"speed": 100, "temp": 210}}
+    resolved = resolve_inheritance(profile, base_profiles)
+    assert "_source_path" not in resolved
+    assert "_profile_type" not in resolved
+    assert resolved["speed"] == 200
+    assert resolved["temp"] == 210
